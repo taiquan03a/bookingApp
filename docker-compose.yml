@@ -5,7 +5,7 @@ services:
     build: .
     container_name: springboot-app
     ports:
-      - "8080:8080"
+      - "8082:8082"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
     depends_on:
@@ -21,7 +21,7 @@ services:
       MYSQL_PASSWORD: password
       MYSQL_DATABASE: mydatabase
     ports:
-      - "3306:3306"
+      - "3306:3307"
     volumes:
       - mysql_data:/var/lib/mysql
 

@@ -1,4 +1,8 @@
-application:
+server:
+  port: 9090
+
+
+  application:
   jwt:
     expiration: 86400000
     refresh-token:
@@ -13,7 +17,7 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     password:
-    url: jdbc:mysql://localhost:3306/booking
+    url: jdbc:mysql://localhost:3307/booking
     username: root
     jpa:
       show-sql: true
