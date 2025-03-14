@@ -8,7 +8,7 @@ pipeline {
         DOCKER_TAG = 'latest'
         AZURE_WEBAPP_NAME = 'bookingapp'  // Tên Azure App Service
         RESOURCE_GROUP = 'bookingapp_group'
-        DOCKER_HUB_CREDENTIALS = '7c8a17d2-d417-4fd1-ac91-744ba31684ec' // Jenkins Credentials ID
+        DOCKER_HUB_CREDENTIALS = '7ea86a63-930b-4446-bdc5-439d002f1221' // Jenkins Credentials ID
         DOCKER_PASS = 'Taiquan123@'
     }
 
