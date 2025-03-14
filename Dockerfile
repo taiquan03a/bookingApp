@@ -21,7 +21,7 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # Expose cổng mà ứng dụng chạy
-EXPOSE 8082
+EXPOSE 9090
 
 # Lệnh để chạy ứng dụng khi container khởi động
 ENTRYPOINT ["java", "-jar", "app.jar"]
