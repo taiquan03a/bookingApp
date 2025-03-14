@@ -9,7 +9,7 @@ pipeline {
     stages {
 		stage('Clone Repository') {
 			steps {
-				git 'https://your-repo-url.git'
+				git branch: 'main', url: 'https://github.com/taiquan03a/bookingApp.git'
             }
         }
 
