@@ -15,7 +15,12 @@ pipeline {
 
         stage('Build Application') {
 			steps {
-				sh 'mvn clean package -DskipTests'
+				sh '''
+                docker run --rm \
+                    -v $PWD:/app \
+                    -w /app \
+                    maven:3.8.6 mvn clean package -DskipTests
+                '''
             }
         }
 
@@ -27,7 +32,7 @@ pipeline {
 
         stage('Run Docker Container') {
 			steps {
-				sh 'docker-compose down'
+				sh 'docker-compose down || true'  // Nếu container chưa chạy, bỏ qua lỗi
                 sh 'docker-compose up -d'
             }
         }
