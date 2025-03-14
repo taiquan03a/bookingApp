@@ -3,10 +3,7 @@ package com.ptit.booking.controller;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +32,10 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(401).body("Invalid Firebase ID Token");
         }
+    }
+    @GetMapping("")
+    public ResponseEntity<?> authenticate() {
+        return ResponseEntity.ok("You are authenticated");
     }
 }
 
