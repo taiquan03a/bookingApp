@@ -1,0 +1,51 @@
+application:
+  jwt:
+    expiration: 86400000
+    refresh-token:
+      expiration: 604800000
+  secret-key: qIeh85osZvGLA7gL+2F5nGf9Tw2ljTxajtaSlXJYUoTyGRDfJieA+d+CVIFN9lIoYtZfN6OE1yqSCl4JAfcx7g==
+cloudinary:
+  api-key: 891893339399535
+  api-secret: _mOk7EbEtcG9bYZ_kQIuSLRZQqU
+  cloud-name: dt7eo0hbq
+  secure: true
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    password:
+    url: jdbc:mysql://localhost:3306/booking
+    username: root
+    jpa:
+      show-sql: true
+      hibernate:
+        ddl-auto: none
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  mail:
+    host: smtp.gmail.com
+    password: xzvbxjvuqtcdvedy
+    port: 587
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        transport:
+          protocol: smtp
+    username: shoesshopvn03@gmail.com
+  main:
+    allow-circular-references: true
+  security:
+    filter:
+      order: 0
+    user:
+      name: admin
+      password: password
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 10MB
+      max-file-size: 50MB
+      max-request-size: 50MB
