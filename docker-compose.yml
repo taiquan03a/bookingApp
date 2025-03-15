@@ -5,7 +5,7 @@ services:
     build: .
     container_name: springboot-app
     ports:
-      - "9090:9090"
+      - "8080:8090"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
     depends_on:
