@@ -15,7 +15,7 @@ public class AuthController {
     public ResponseEntity<?> authenticateWithFirebase(@RequestBody Map<String, String> request) {
         try {
             String idToken = request.get("idToken");
-
+            System.out.println("idToken-> "+ idToken);
             // Xác thực token từ Firebase
             FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
             String uid = decodedToken.getUid();

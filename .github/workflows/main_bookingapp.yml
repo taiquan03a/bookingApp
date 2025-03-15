@@ -62,5 +62,5 @@ jobs:
         with:
           app-name: 'bookingapp'
           slot-name: 'Production'
-          package: '*.war'
+          package: '*.jar'
           
