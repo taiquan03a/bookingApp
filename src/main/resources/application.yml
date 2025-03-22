@@ -63,3 +63,8 @@ springdoc:
       file-size-threshold: 10MB
       max-file-size: 50MB
       max-request-size: 50MB
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    com.ptit.booking: DEBUG
