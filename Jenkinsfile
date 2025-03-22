@@ -4,7 +4,6 @@ pipeline {
     environment {
 		AZURE_REGISTRY = "bookingspring.azurecr.io"
         IMAGE_NAME = "bookingspringboot"
-        IMAGE_TAG = "development"
         AZURE_WEB_APP = "api-booking-app"
         RESOURCE_GROUP = "booking"
     }
@@ -15,6 +14,16 @@ pipeline {
 				git branch: 'main', url: 'https://github.com/taiquan03a/bookingApp.git'
             }
         }
+
+        stage('Get Commit ID') {
+			steps {
+				script {
+					IMAGE_TAG = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    echo "Commit ID: ${IMAGE_TAG}"
+                }
+            }
+        }
+
         stage('Login to Azure Container Registry') {
 			steps {
 				withCredentials([usernamePassword(credentialsId: 'fc2f7088-cccb-4ab5-aaeb-f47511b32693', usernameVariable: 'ACR_USER', passwordVariable: 'ACR_PASS')]) {
@@ -22,7 +31,15 @@ pipeline {
                 }
             }
         }
-		stage('Build & Push Docker Image') {
+        stage('Check user docker'){
+			steps{
+				script{
+					sh "groups"
+				}
+			}
+		}
+
+        stage('Build & Push Docker Image') {
 			steps {
 				sh """
                     docker build -t ${AZURE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
