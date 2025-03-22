@@ -2,6 +2,7 @@ package com.ptit.booking.service.Impl;
 
 import com.cloudinary.api.exceptions.ApiException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.firebase.auth.AuthErrorCode;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
@@ -317,8 +318,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     .data(data)
                     .build());
         }catch (FirebaseAuthException e) {
-            System.out.println(e.getMessage());
-            if ("EXPIRED_ID_TOKEN".equals(e.getErrorCode())) {
+            System.out.println(e.getAuthErrorCode());
+            if (e.getAuthErrorCode().equals(AuthErrorCode.EXPIRED_ID_TOKEN)) {
                 throw new AppException(ErrorCode.FIREBASE_KEY_EXPIRED);
             }
             throw new AppException(ErrorCode.FIREBASE_KEY_INVALID);

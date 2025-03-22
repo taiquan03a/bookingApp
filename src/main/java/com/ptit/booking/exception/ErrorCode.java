@@ -22,7 +22,7 @@ public enum ErrorCode {
     EMAIL_OR_PHONE_NOT_FOUND(404, "Email or Phone number not found", HttpStatus.NOT_FOUND),
     USER_NOT_FOUND(404, "User not found", HttpStatus.NOT_FOUND),
     FIREBASE_KEY_INVALID(403, "Firebase key invalid", HttpStatus.BAD_REQUEST),
-    FIREBASE_KEY_EXPIRED(403, "Firebase key expired", HttpStatus.BAD_REQUEST),
+    FIREBASE_KEY_EXPIRED(401, "Firebase key expired", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

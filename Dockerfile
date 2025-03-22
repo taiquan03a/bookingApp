@@ -20,9 +20,6 @@ WORKDIR /app
 # Copy file JAR từ quá trình build vào container
 COPY --from=build /app/target/*.jar app.jar
 
-# Copy file cấu hình Firebase vào container
-COPY src/main/resources/serviceAccountKey.json /app/src/main/resources/
-
 
 # Expose cổng mà ứng dụng chạy
 EXPOSE 8080
