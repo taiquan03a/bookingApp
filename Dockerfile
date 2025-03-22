@@ -20,8 +20,12 @@ WORKDIR /app
 # Copy file JAR từ quá trình build vào container
 COPY --from=build /app/target/*.jar app.jar
 
+# Copy file cấu hình Firebase vào container
+COPY src/main/resources/serviceAccountKey.json /app/src/main/resources/
+
+
 # Expose cổng mà ứng dụng chạy
-EXPOSE 8090
+EXPOSE 8080
 
 # Lệnh để chạy ứng dụng khi container khởi động
 ENTRYPOINT ["java", "-jar", "app.jar"]

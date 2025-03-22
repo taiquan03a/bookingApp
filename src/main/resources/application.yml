@@ -1,8 +1,9 @@
 server:
   port: 8080
+  address: 0.0.0.0
 
 
-  application:
+application:
   jwt:
     expiration: 86400000
     refresh-token:
@@ -16,14 +17,21 @@ cloudinary:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    password:
-    url: jdbc:mysql://localhost:3307/booking
-    username: root
+    password: Taiquan123@
+    url: jdbc:mysql://booking.mysql.database.azure.com:3306/booking
+    username: quannt
     jpa:
       show-sql: true
       hibernate:
-        ddl-auto: none
+        ddl-auto: update
         dialect: org.hibernate.dialect.MySQLDialect
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
 
   mail:
     host: smtp.gmail.com

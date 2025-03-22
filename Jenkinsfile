@@ -1,69 +1,55 @@
-//pipeline {
-//	agent any
-//
-//    environment {
-//		IMAGE_NAME = 'bookingapp'
-//        DOCKER_HUB_USER = 'taiquan03a'
-//        DOCKER_HUB_REPO = "${DOCKER_HUB_USER}/${IMAGE_NAME}"
-//        DOCKER_TAG = 'latest'
-//        AZURE_WEBAPP_NAME = 'bookingapp'  // Tên Azure App Service
-//        RESOURCE_GROUP = 'bookingapp_group'
-//        DOCKER_HUB_CREDENTIALS = '7ea86a63-930b-4446-bdc5-439d002f1221' // Jenkins Credentials ID
-//        DOCKER_PASS = 'Taiquan123@'
-//    }
-//
-//    stages {
-//		stage('Clone Repository') {
-//			steps {
-//				git branch: 'main', url: 'https://github.com/taiquan03a/bookingApp.git'
-//            }
-//        }
-//
-//        stage('Build Application') {
-//			steps {
-//				sh '''
-//                docker run --rm \
-//                    -v $PWD:/app \
-//                    -w /app \
-//                    maven:3.8.6 mvn clean package -DskipTests
-//                '''
-//            }
-//        }
-//
-//        stage('Build Docker Image') {
-//			steps {
-//				sh "docker build -t $DOCKER_HUB_REPO:$DOCKER_TAG ."
-//            }
-//        }
-//
-//        stage('Push Docker Image to Docker Hub') {
-//			steps {
-//				withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASS')]) {
-//					sh '''
-//                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-//                    docker push $DOCKER_HUB_REPO:$DOCKER_TAG
-//                    '''
-//                }
-//            }
-//        }
-//
-//        stage('Deploy to Azure Web App') {
-//			steps {
-//				sh '''
-//                az webapp config container set --name $AZURE_WEBAPP_NAME --resource-group $RESOURCE_GROUP \
-//                --docker-custom-image-name $DOCKER_HUB_REPO:$DOCKER_TAG
-//                az webapp restart --name $AZURE_WEBAPP_NAME --resource-group $RESOURCE_GROUP
-//                '''
-//            }
-//        }
-//    }
-//
-//    post {
-//		success {
-//			echo "Deployment successful!"
-//        }
-//        failure {
-//			echo "Deployment failed!"
-//        }
-//    }
-//}
+pipeline {
+	agent any
+
+    environment {
+		AZURE_REGISTRY = "bookingspring.azurecr.io"
+        IMAGE_NAME = "bookingspringboot"
+        IMAGE_TAG = "development"
+        AZURE_WEB_APP = "api-booking-app"
+        RESOURCE_GROUP = "booking"
+    }
+
+    stages {
+		stage('Clone Code') {
+			steps {
+				git branch: 'main', url: 'https://github.com/taiquan03a/bookingApp.git'
+            }
+        }
+        stage('Login to Azure Container Registry') {
+			steps {
+				withCredentials([usernamePassword(credentialsId: 'fc2f7088-cccb-4ab5-aaeb-f47511b32693', usernameVariable: 'ACR_USER', passwordVariable: 'ACR_PASS')]) {
+					sh "docker login ${AZURE_REGISTRY} -u ${ACR_USER} -p ${ACR_PASS}"
+                }
+            }
+        }
+		stage('Build & Push Docker Image') {
+			steps {
+				sh """
+                    docker build -t ${AZURE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
+                    docker push ${AZURE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                """
+            }
+        }
+
+        stage('Deploy to Azure App Service') {
+			steps {
+				withCredentials([usernamePassword(credentialsId: '630d5656-9bfd-434e-85e4-c33a08815d6e', usernameVariable: 'AZURE_CLIENT_ID', passwordVariable: 'AZURE_CLIENT_SECRET')]) {
+					sh """
+                        az login --username ${AZURE_CLIENT_ID} --password ${AZURE_CLIENT_SECRET}
+                        az webapp config container set --name ${AZURE_WEB_APP} --resource-group ${RESOURCE_GROUP} --docker-custom-image-name ${AZURE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                        az webapp restart --name ${AZURE_WEB_APP} --resource-group ${RESOURCE_GROUP}
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+		success {
+			echo 'Deployment thành công trên Azure!'
+        }
+        failure {
+			echo 'Deployment thất bại!'
+        }
+    }
+}
