@@ -63,6 +63,9 @@ springdoc:
       file-size-threshold: 10MB
       max-file-size: 50MB
       max-request-size: 50MB
+  foursquare:
+    api:
+      key: fsq3VsauLSw5an6aSmbScZFmlw1nco2b+9ozuSaKfVJzdK4=
 
 logging:
   level:

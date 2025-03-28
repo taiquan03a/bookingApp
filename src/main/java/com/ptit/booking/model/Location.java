@@ -23,4 +23,6 @@ public class Location {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "rating")
+    private float rating;
 }

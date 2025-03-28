@@ -1,5 +1,6 @@
 package com.ptit.booking.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -25,6 +26,7 @@ public class Amenity {
     private String name;
 
     @OneToMany(mappedBy = "amenity")
+    @JsonIgnore
     private Set<HotelAmenity> hotelAmenities = new LinkedHashSet<>();
 
 }
