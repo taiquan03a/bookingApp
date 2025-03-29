@@ -1,5 +1,6 @@
 package com.ptit.booking.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -8,6 +9,8 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -38,5 +41,30 @@ public class Room {
     @ManyToOne(fetch = FetchType.LAZY,optional = false)
     @JoinColumn(name = "hotel_id")
     private Hotel hotel;
+
+    @Column(name = "max_adults")
+    private Integer maxAdults;
+
+    @Column(name = "max_children")
+    private Integer maxChildren;
+
+    @Size(max = 50)
+    @Column(name = "name", length = 50)
+    private String name;
+
+    @Column(name = "area")
+    private Integer area;
+
+    @Size(max = 50)
+    @Column(name = "bed", length = 50)
+    private String bed;
+
+    @OneToMany(mappedBy = "room")
+    @JsonIgnore
+    private Set<Booking> bookings = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "room")
+    @JsonIgnore
+    private Set<ServiceRoom> serviceRooms = new LinkedHashSet<>();
 
 }

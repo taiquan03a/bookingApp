@@ -5,34 +5,42 @@ import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.hotel.FilterRequest;
 import com.ptit.booking.dto.hotel.HomeDto;
 import com.ptit.booking.dto.hotel.HotelRequest;
-import com.ptit.booking.dto.hotelDetail.Activity;
-import com.ptit.booking.dto.hotelDetail.HotelDetail;
-import com.ptit.booking.dto.hotelDetail.NearBy;
+import com.ptit.booking.dto.hotelDetail.*;
 import com.ptit.booking.dto.hotelDetail.Review;
+import com.ptit.booking.dto.policy.PolicyRoom;
+import com.ptit.booking.enums.EnumServiceType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
-import com.ptit.booking.model.Hotel;
-import com.ptit.booking.model.Image;
-import com.ptit.booking.model.Promotion;
-import com.ptit.booking.model.Room;
+import com.ptit.booking.exception.ErrorResponse;
+import com.ptit.booking.mapping.RoomResponseMapper;
+import com.ptit.booking.model.*;
 import com.ptit.booking.repository.HotelRepository;
 import com.ptit.booking.repository.PromotionRepository;
 import com.ptit.booking.repository.RoomRepository;
+import com.ptit.booking.repository.ServiceRepository;
 import com.ptit.booking.service.HotelService;
 import com.ptit.booking.specification.HotelSpecification;
+import com.ptit.booking.specification.RoomSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.ptit.booking.constants.ErrorMessage.*;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +48,7 @@ public class HotelServiceImpl implements HotelService {
     private final HotelRepository hotelRepository;
     private final PromotionRepository promotionRepository;
     private final RoomRepository roomRepository;
+    private final ServiceRepository serviceRepository;
     private String apiKey = "fsq3VsauLSw5an6aSmbScZFmlw1nco2b+9ozuSaKfVJzdK4=";
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -115,7 +124,16 @@ public class HotelServiceImpl implements HotelService {
     }
 
     @Override
-    public ResponseEntity<?> hotelDetail(Long hotelId) {
+    public ResponseEntity<?> hotelDetail(Long hotelId, LocalDate checkInDate, LocalDate checkOutDate) {
+        long daysBetween = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+        if(daysBetween < 1) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
+                    .statusCode(403)
+                    .message("CHECKIN_AFTER_CHECKOUT")
+                    .description(CHECKIN_AFTER_CHECKOUT)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
         Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
         Review review = Review.builder()
                 .description(hotel.getDescription())
@@ -133,7 +151,7 @@ public class HotelServiceImpl implements HotelService {
         HotelDetail hotelDetail = HotelDetail.builder()
                 .images(hotel.getImages().stream().map(Image::getUrl).toList())
                 .nearBy(nearBy)
-                .priceMin(hotel.getRooms()
+                .priceMin(daysBetween * hotel.getRooms()
                         .stream()
                         .map(Room::getPrice)
                         .min(BigDecimal::compareTo)
@@ -149,13 +167,56 @@ public class HotelServiceImpl implements HotelService {
     }
 
     @Override
-    public ResponseEntity<?> selectRooms(Long hotelId) {
-        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-
-
-        return null;
+    @Transactional
+    public ResponseEntity<?> selectRooms(SelectRoomRequest selectRoomRequest) {
+        Hotel hotel = hotelRepository.findById(selectRoomRequest.getHotelId())
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        Specification<Room> specRoomAvi = RoomSpecification.availableRooms(selectRoomRequest,hotel);
+        List<RoomResponse> re = roomRepository.findAll(specRoomAvi)
+                .stream()
+                .map(
+                        room -> mapRoomResponse(
+                                room,
+                                (int) ChronoUnit.DAYS.between(
+                                        selectRoomRequest.getCheckInDate(),
+                                        selectRoomRequest.getCheckOutDate()
+                                ),
+                                roomRepository.countAvailableRoom(
+                                        room,selectRoomRequest.getCheckInDate(),
+                                        selectRoomRequest.getCheckOutDate()
+                                )
+                        )
+                )
+                .toList();
+        return ResponseEntity.ok(ApiResponse.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message(SuccessMessage.LIST_ROOM_AVAILABLE + selectRoomRequest.getHotelId())
+                .data(re)
+                .build());
     }
-
+    private RoomResponse mapRoomResponse(Room room, int selectDay,int availableRoom) {
+        Set<com.ptit.booking.model.Service> serviceSet = serviceRepository.findAllByRoom(room);
+        Set<PolicyRoom> policyRoomList = new LinkedHashSet<>();
+        for(HotelPolicy hotelPolicy:room.getHotel().getHotelPolicies()){
+            PolicyRoom policyRoom = PolicyRoom.builder()
+                    .policyId(hotelPolicy.getPolicy().getId())
+                    .policyDescription(hotelPolicy.getDescription())
+                    .policyName(hotelPolicy.getPolicy().getName())
+                    .build();
+            policyRoomList.add(policyRoom);
+        }
+        return RoomResponse.builder()
+                .roomId(room.getId())
+                .roomName(room.getName())
+                .area(room.getArea())
+                .bed(room.getBed())
+                .serviceList(serviceSet)
+                .selectDay(selectDay)
+                .price(selectDay * room.getPrice().floatValue())
+                .roomQuantity(availableRoom)
+                .policyRoomList(policyRoomList)
+                .build();
+    }
     public List<Activity> searchPlaces(String location) {
         // 1. Get coordinates from OpenStreetMap
         String geocodeUrl = "https://nominatim.openstreetmap.org/search";

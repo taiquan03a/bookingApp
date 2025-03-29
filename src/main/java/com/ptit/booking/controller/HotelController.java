@@ -1,11 +1,14 @@
 package com.ptit.booking.controller;
 
 import com.ptit.booking.dto.hotel.FilterRequest;
+import com.ptit.booking.dto.hotelDetail.SelectRoomRequest;
 import com.ptit.booking.service.FoursquareService;
 import com.ptit.booking.service.HotelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,8 +30,16 @@ public class HotelController {
         return hotelService.search(sortBy,sort,page,filterRequest);
     }
     @GetMapping("/hotel_detail/{id}")
-    public ResponseEntity<?> hotelDetail(@PathVariable Long id){
-        return hotelService.hotelDetail(id);
+    public ResponseEntity<?> hotelDetail(
+            @PathVariable Long id,
+            @RequestParam LocalDate checkInDate,
+            @RequestParam LocalDate checkOutDate
+            ){
+        return hotelService.hotelDetail(id,checkInDate,checkOutDate);
+    }
+    @GetMapping("/select_room")
+    public ResponseEntity<?> selectRoom(@RequestBody SelectRoomRequest selectRoomRequest){
+        return hotelService.selectRooms(selectRoomRequest);
     }
 
 }

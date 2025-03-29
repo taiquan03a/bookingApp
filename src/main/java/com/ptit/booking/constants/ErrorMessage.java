@@ -14,5 +14,6 @@ public class ErrorMessage {
     public static final String INCORRECT_PASSWORD_CONFIRMATION = "Password confirmation cannot be empty.";
     public static final String NEW_PASSWORD_IS_SAME_CURRENT_PASSWORD = "Password mới trùng với password hiện tại, vui lòng thử một password khác";
     public static final String EMAIL_OR_PHONE_NOT_FOUND = "Email or phone not found";
+    public static final String CHECKIN_AFTER_CHECKOUT = "Ngày trả phòng phải sau ngày nhận phòng";
 
 }
