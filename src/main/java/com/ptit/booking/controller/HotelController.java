@@ -34,11 +34,15 @@ public class HotelController {
     @GetMapping("/hotel_detail/{id}")
     public ResponseEntity<?> hotelDetail(
             @PathVariable Long id,
-            @RequestParam LocalDate checkInDate,
-            @RequestParam LocalDate checkOutDate
+            @RequestParam(required = false) LocalDate checkInDate,
+            @RequestParam(required = false) LocalDate checkOutDate
             ){
+        if (checkInDate == null) {
+            checkInDate = LocalDate.now();
+        }
+        if (checkOutDate == null) {
+            checkOutDate = checkInDate.plusDays(1);
+        }
         return hotelService.hotelDetail(id,checkInDate,checkOutDate);
     }
-
-
 }
