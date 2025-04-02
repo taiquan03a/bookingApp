@@ -2,7 +2,6 @@ package com.ptit.booking.controller;
 
 import com.ptit.booking.dto.hotel.FilterRequest;
 import com.ptit.booking.dto.hotelDetail.SelectRoomRequest;
-import com.ptit.booking.service.FoursquareService;
 import com.ptit.booking.service.HotelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
