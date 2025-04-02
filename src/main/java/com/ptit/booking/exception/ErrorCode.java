@@ -23,6 +23,8 @@ public enum ErrorCode {
     USER_NOT_FOUND(404, "User not found", HttpStatus.NOT_FOUND),
     FIREBASE_KEY_INVALID(403, "Firebase key invalid", HttpStatus.BAD_REQUEST),
     FIREBASE_KEY_EXPIRED(401, "Firebase key expired", HttpStatus.BAD_REQUEST),
+    LOCATION_NOT_FOUND(404, "Location not found", HttpStatus.NOT_FOUND),
+    ROOM_NOT_FOUND(404, "Room not found", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

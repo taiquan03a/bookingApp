@@ -1,10 +1,10 @@
 package com.ptit.booking.service.Impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
-import com.ptit.booking.dto.hotel.FilterRequest;
-import com.ptit.booking.dto.hotel.HomeDto;
-import com.ptit.booking.dto.hotel.HotelRequest;
+import com.ptit.booking.dto.hotel.*;
 import com.ptit.booking.dto.hotelDetail.*;
 import com.ptit.booking.dto.hotelDetail.Review;
 import com.ptit.booking.dto.policy.PolicyRoom;
@@ -14,10 +14,7 @@ import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
 import com.ptit.booking.mapping.RoomResponseMapper;
 import com.ptit.booking.model.*;
-import com.ptit.booking.repository.HotelRepository;
-import com.ptit.booking.repository.PromotionRepository;
-import com.ptit.booking.repository.RoomRepository;
-import com.ptit.booking.repository.ServiceRepository;
+import com.ptit.booking.repository.*;
 import com.ptit.booking.service.HotelService;
 import com.ptit.booking.specification.HotelSpecification;
 import com.ptit.booking.specification.RoomSpecification;
@@ -28,13 +25,17 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.redis.core.ListOperations;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -49,12 +50,21 @@ public class HotelServiceImpl implements HotelService {
     private final PromotionRepository promotionRepository;
     private final RoomRepository roomRepository;
     private final ServiceRepository serviceRepository;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final LocationRepository locationRepository;
+    private static final int MAX_HISTORY = 10;
     private String apiKey = "fsq3VsauLSw5an6aSmbScZFmlw1nco2b+9ozuSaKfVJzdK4=";
 
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
-    public ResponseEntity<?> home() {
+    public ResponseEntity<?> home(Principal principal) {
+        User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
+        List<SearchHistory> historySearchList = new ArrayList<>();
+        if(user != null){
+            historySearchList = getSearchHistory(user.getId());
+        }
         List<Promotion> promotions = promotionRepository.findAll();
         List<HomeDto> homeDtoList = new ArrayList<>();
         for (Promotion promotion : promotions) {
@@ -69,13 +79,17 @@ public class HotelServiceImpl implements HotelService {
                         .promotionName(promotion.getName())
                         .sumReview(hotel.getFeedbackSum())
                         .price(roomRepository.getRoomPriceMin(hotel))
-                        .imageUrl(hotel.getImages().stream().findFirst().get().getUrl())
+                        .imageUrl(hotel.getImages()
+                                .stream()
+                                .findFirst()
+                                .orElseThrow(() -> new AppException(ErrorCode.ROOM_NOT_FOUND))
+                                .getUrl())
                         .build();
                 hotelRequestList.add(hotelRequest);
             }
             HomeDto homeDto = HomeDto.builder()
                     .hotelRequestList(hotelRequestList)
-                    .historySearchList(new ArrayList<>())
+                    .historySearchList(historySearchList)
                     .build();
             homeDtoList.add(homeDto);
         }
@@ -85,14 +99,76 @@ public class HotelServiceImpl implements HotelService {
                 .data(homeDtoList)
                 .build());
     }
+    private List<SearchHistory> getSearchHistory(Long userId) {
+        try {
+            ListOperations<String, String> listOps = redisTemplate.opsForList();
+            String key = "searchHistory:" + userId;
+            List<String> searchList = listOps.range(key, 0, -1);
+
+            return searchList.stream()
+                    .map(json -> {
+                        try {
+                            return objectMapper.readValue(json, SearchHistory.class);
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                            return null;
+                        }
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return List.of();
+        }
+    }
 
     @Override
-    public ResponseEntity<?> search(String sortBy, String sort, int page, FilterRequest filterRequest) {
+    public ResponseEntity<?> search(String sortBy, String sort, int page, FilterRequest filterRequest, Principal principal) throws JsonProcessingException {
+        User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
         Pageable pageable = PageRequest.of(page, 5,
                 sort.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending());
+        if(user != null){
+            SearchHistory search = SearchHistory.builder()
+                    .location(locationRepository
+                            .findById(filterRequest.getLocationId())
+                            .orElseThrow(() -> new AppException(ErrorCode.LOCATION_NOT_FOUND))
+                            .getName())
+                    .checkIn(filterRequest.getCheckin())
+                    .checkOut(filterRequest.getCheckout())
+                    .adults(filterRequest.getAdults())
+                    .children(filterRequest.getChildren())
+                    .rooms(filterRequest.getRoomNumber())
+                    .build();
 
+            ListOperations<String, String> listOps = redisTemplate.opsForList();
+            String key = "searchHistory:" + user.getId();
+            String searchJson = objectMapper.writeValueAsString(search);
+
+            // Lấy toàn bộ lịch sử tìm kiếm hiện có
+            List<String> searchList = listOps.range(key, 0, -1);
+
+            // Xóa lịch sử cũ của cùng một địa điểm (nếu có)
+            if (searchList != null) {
+                for (String json : searchList) {
+                    try {
+                        SearchHistory oldSearch = objectMapper.readValue(json, SearchHistory.class);
+                        if (oldSearch.getLocation().equals(search.getLocation())) {
+                            listOps.remove(key, 1, json); // Xóa mục cũ
+                            break; // Dừng lại ngay khi tìm thấy mục cần xóa
+                        }
+                    } catch (JsonProcessingException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            // Lưu lịch sử mới vào đầu danh sách
+            listOps.leftPush(key, searchJson);
+
+            // Giữ tối đa MAX_HISTORY mục
+            listOps.trim(key, 0, MAX_HISTORY - 1);
+
+        }
         Page<Hotel> hotels = hotelRepository.findAllWithDetails(HotelSpecification.filterHotels(filterRequest), pageable);
-
         Page<HotelRequest> hotelRequestPage = hotels.map(hotel -> new HotelRequest(
                 hotel.getId(),
                 hotel.getName(),
