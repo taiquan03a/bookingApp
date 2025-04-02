@@ -21,8 +21,6 @@ public class Review {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "rating")
-    private Integer rating;
 
     @Lob
     @Column(name = "comment")
@@ -35,5 +33,17 @@ public class Review {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id")
     private Hotel hotel;
+
+    @Column(name = "rating_service")
+    private Integer ratingService;
+
+    @Column(name = "rating_hotel")
+    private Integer ratingHotel;
+
+    @Column(name = "rating_room")
+    private Integer ratingRoom;
+
+    @Column(name = "rating_location")
+    private Integer ratingLocation;
 
 }

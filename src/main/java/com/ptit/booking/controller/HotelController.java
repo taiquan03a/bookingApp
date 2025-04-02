@@ -39,9 +39,6 @@ public class HotelController {
             ){
         return hotelService.hotelDetail(id,checkInDate,checkOutDate);
     }
-    @GetMapping("/select_room")
-    public ResponseEntity<?> selectRoom(@RequestBody SelectRoomRequest selectRoomRequest){
-        return hotelService.selectRooms(selectRoomRequest);
-    }
+
 
 }

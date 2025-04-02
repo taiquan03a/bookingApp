@@ -8,11 +8,12 @@ import java.util.Set;
 
 @Data
 @Builder
-public class Review {
+public class ReviewDto {
     private float rating;
     private int sumReview;
     private String description;
     private Set<Amenity> amenities;
     private String location;
     private String phoneNumber;
+    private Feedback feedback;
 }
