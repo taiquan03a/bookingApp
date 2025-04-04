@@ -8,30 +8,25 @@ import com.ptit.booking.dto.feedback.Comment;
 import com.ptit.booking.dto.hotel.*;
 import com.ptit.booking.dto.hotelDetail.*;
 import com.ptit.booking.dto.hotelDetail.ReviewDto;
-import com.ptit.booking.dto.policy.PolicyRoom;
-import com.ptit.booking.enums.EnumServiceType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
-import com.ptit.booking.mapping.RoomResponseMapper;
 import com.ptit.booking.model.*;
 import com.ptit.booking.repository.*;
 import com.ptit.booking.service.HotelService;
 import com.ptit.booking.specification.HotelSpecification;
-import com.ptit.booking.specification.RoomSpecification;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -126,8 +121,7 @@ public class HotelServiceImpl implements HotelService {
     @Override
     public ResponseEntity<?> search(String sortBy, String sort, int page, FilterRequest filterRequest, Principal principal) throws JsonProcessingException {
         User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
-        Pageable pageable = PageRequest.of(page, 5,
-                sort.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending());
+        Pageable pageable = PageRequest.of(page, 5);
         if(user != null){
             SearchHistory search = SearchHistory.builder()
                     .location(locationRepository
@@ -170,7 +164,7 @@ public class HotelServiceImpl implements HotelService {
             listOps.trim(key, 0, MAX_HISTORY - 1);
 
         }
-        Page<Hotel> hotels = hotelRepository.findAllWithDetails(HotelSpecification.filterHotels(filterRequest), pageable);
+        Page<Hotel> hotels = hotelRepository.findAll(HotelSpecification.filterHotels(filterRequest,sortBy,sort), pageable);
         Page<HotelRequest> hotelRequestPage = hotels.map(hotel -> new HotelRequest(
                 hotel.getId(),
                 hotel.getName(),

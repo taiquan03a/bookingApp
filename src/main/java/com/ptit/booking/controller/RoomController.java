@@ -15,8 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("api/room")
 public class RoomController {
     private final RoomService roomService;
-
-
     @GetMapping("/select_room")
     public ResponseEntity<?> selectRoom(@RequestBody SelectRoomRequest selectRoomRequest){
         return roomService.selectRooms(selectRoomRequest);

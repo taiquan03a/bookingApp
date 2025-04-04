@@ -1,7 +1,7 @@
 package com.ptit.booking.repository;
 
 import com.ptit.booking.model.Room;
-import com.ptit.booking.model.Service;
+import com.ptit.booking.model.ServiceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,9 +9,9 @@ import org.springframework.stereotype.Repository;
 import java.util.Set;
 
 @Repository
-public interface ServiceRepository extends JpaRepository<Service, Long> {
+public interface ServiceRepository extends JpaRepository<ServiceEntity, Long> {
     @Query("SELECT s FROM ServiceRoom sr " +
-            "JOIN sr.service s " +
+            "JOIN sr.serviceEntity s " +
             "WHERE sr.room = :room AND s.serviceType = 'AMENITY'")
-    Set<Service> findAllByRoom(@Param("room") Room room);
+    Set<ServiceEntity> findAllByRoom(@Param("room") Room room);
 }

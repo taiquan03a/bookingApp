@@ -23,7 +23,7 @@ public class HotelController {
     }
     @GetMapping("/filter")
     public ResponseEntity<?> filter(
-            @RequestParam(value = "sortBy",required = false,defaultValue = "id") String sortBy,
+            @RequestParam(value = "sortBy",required = false,defaultValue = "price") String sortBy,
             @RequestParam(value = "sort",required = false,defaultValue = "asc") String sort,
             @RequestParam(value = "page",required = false,defaultValue = "0") int page,
             @RequestBody FilterRequest filterRequest,

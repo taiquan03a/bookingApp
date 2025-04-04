@@ -18,7 +18,7 @@ public enum ErrorCode {
     INVALID_DOB(1008, "Your age must be at least {min}", HttpStatus.BAD_REQUEST),
     NOT_FOUND(404, "Not found", HttpStatus.NOT_FOUND),
     BOOKING_ROOM_NOT_FOUND(405, "Booking room not found", HttpStatus.NOT_FOUND),
-    SERVICE_NOT_FOUND(406, "Service not found", HttpStatus.NOT_FOUND),
+    SERVICE_NOT_FOUND(406, "ServiceEntity not found", HttpStatus.NOT_FOUND),
     EMAIL_OR_PHONE_NOT_FOUND(404, "Email or Phone number not found", HttpStatus.NOT_FOUND),
     USER_NOT_FOUND(404, "User not found", HttpStatus.NOT_FOUND),
     FIREBASE_KEY_INVALID(403, "Firebase key invalid", HttpStatus.BAD_REQUEST),

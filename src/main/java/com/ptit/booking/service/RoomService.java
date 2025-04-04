@@ -5,5 +5,5 @@ import org.springframework.http.ResponseEntity;
 
 public interface RoomService {
     ResponseEntity<?> selectRooms (SelectRoomRequest selectRoomRequest);
-
+    //ResponseEntity<?> bookingRooms ();
 }

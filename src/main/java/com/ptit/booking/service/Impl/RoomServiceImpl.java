@@ -7,10 +7,11 @@ import com.ptit.booking.dto.hotelDetail.SelectRoomRequest;
 import com.ptit.booking.dto.policy.PolicyRoom;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
+import com.ptit.booking.exception.ErrorResponse;
 import com.ptit.booking.model.Hotel;
 import com.ptit.booking.model.HotelPolicy;
 import com.ptit.booking.model.Room;
-import com.ptit.booking.model.Service;
+import com.ptit.booking.model.ServiceEntity;
 import com.ptit.booking.repository.HotelRepository;
 import com.ptit.booking.repository.RoomRepository;
 import com.ptit.booking.repository.ServiceRepository;
@@ -22,10 +23,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import static com.ptit.booking.constants.ErrorMessage.CHECKIN_AFTER_CHECKOUT;
+import static com.ptit.booking.constants.ErrorMessage.CHECKIN_MUST_TODAY_OR_FUTURE;
 
 @org.springframework.stereotype.Service
 @Transactional
@@ -38,6 +44,24 @@ public class RoomServiceImpl implements RoomService {
     @Override
     @Transactional
     public ResponseEntity<?> selectRooms(SelectRoomRequest selectRoomRequest) {
+        long daysBetween = ChronoUnit.DAYS.between(selectRoomRequest.getCheckInDate(), selectRoomRequest.getCheckOutDate());
+        if(selectRoomRequest.getCheckInDate().isBefore(LocalDate.now())){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
+                    .statusCode(402)
+                    .message("CHECKIN_MUST_TODAY_OR_FUTURE")
+                    .description(CHECKIN_MUST_TODAY_OR_FUTURE)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        if(daysBetween < 1) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
+                    .statusCode(403)
+                    .message("CHECKIN_AFTER_CHECKOUT")
+                    .description(CHECKIN_AFTER_CHECKOUT)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+
         Hotel hotel = hotelRepository.findById(selectRoomRequest.getHotelId())
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
         Specification<Room> specRoomAvi = RoomSpecification.availableRooms(selectRoomRequest,hotel);
@@ -63,8 +87,10 @@ public class RoomServiceImpl implements RoomService {
                 .data(re)
                 .build());
     }
+
+
     private RoomResponse mapRoomResponse(Room room, int selectDay,int availableRoom) {
-        Set<Service> serviceSet = serviceRepository.findAllByRoom(room);
+        Set<ServiceEntity> serviceEntitySet = serviceRepository.findAllByRoom(room);
         Set<PolicyRoom> policyRoomList = new LinkedHashSet<>();
         for(HotelPolicy hotelPolicy:room.getHotel().getHotelPolicies()){
             PolicyRoom policyRoom = PolicyRoom.builder()
@@ -79,7 +105,7 @@ public class RoomServiceImpl implements RoomService {
                 .roomName(room.getName())
                 .area(room.getArea())
                 .bed(room.getBed())
-                .serviceList(serviceSet)
+                .serviceEntityList(serviceEntitySet)
                 .selectDay(selectDay)
                 .price(selectDay * room.getPrice().floatValue())
                 .roomQuantity(availableRoom)
