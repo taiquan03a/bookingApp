@@ -5,24 +5,32 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 @Getter
 @Setter
 @Entity
-@Table(name = "locations")
-public class Location {
+@Table(name = "policy")
+public class Policy {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
     @Size(max = 50)
-    @Column(name = "name", length = 50)
+    @Column(name = "type", length = 50)
+    private String type;
+
+    @Size(max = 255)
+    @Column(name = "name")
     private String name;
 
     @Size(max = 255)
     @Column(name = "description")
     private String description;
 
-    @Column(name = "rating")
-    private float rating;
+    @OneToMany(mappedBy = "policy")
+    private Set<HotelPolicy> hotelPolicies = new LinkedHashSet<>();
+
 }

@@ -7,6 +7,6 @@ import java.util.List;
 @Data
 @Builder
 public class HomeDto {
-    private List<HistorySearch> historySearchList;
+    private List<SearchHistory> historySearchList;
     private List<HotelRequest> hotelRequestList;
 }

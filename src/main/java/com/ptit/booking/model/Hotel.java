@@ -78,4 +78,8 @@ public class Hotel {
             joinColumns = @JoinColumn(name = "hotel_id"),
             inverseJoinColumns = @JoinColumn(name = "amenity_id"))
     private Set<Amenity> amenities = new HashSet<>();
+
+    @OneToMany(mappedBy = "hotel")
+    private Set<HotelPolicy> hotelPolicies = new LinkedHashSet<>();
+
 }
