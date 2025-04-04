@@ -15,5 +15,6 @@ public class ErrorMessage {
     public static final String NEW_PASSWORD_IS_SAME_CURRENT_PASSWORD = "Password mới trùng với password hiện tại, vui lòng thử một password khác";
     public static final String EMAIL_OR_PHONE_NOT_FOUND = "Email or phone not found";
     public static final String CHECKIN_AFTER_CHECKOUT = "Ngày trả phòng phải sau ngày nhận phòng";
+    public static final String CHECKIN_MUST_TODAY_OR_FUTURE = "Ngày check-in phải là ngày hôm nay hoặc là tương lại.";
 
 }

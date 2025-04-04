@@ -12,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class HotelDetail {
-    private Review review;
+    private ReviewDto review;
     private List<String> images;
     private NearBy nearBy;
     private float priceMin;

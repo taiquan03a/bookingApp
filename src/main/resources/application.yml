@@ -1,8 +1,6 @@
 server:
   port: 9090
   address: 0.0.0.0
-
-
 application:
   jwt:
     expiration: 86400000
@@ -22,11 +20,20 @@ spring:
     password: Taiquan123@
     url: jdbc:mysql://booking.mysql.database.azure.com:3306/booking
     username: quannt
-    jpa:
-      show-sql: true
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+      dialect: org.hibernate.dialect.MySQLDialect
+    properties:
       hibernate:
-        ddl-auto: update
-        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: taiquan123
+
 springdoc:
   api-docs:
     enabled: true

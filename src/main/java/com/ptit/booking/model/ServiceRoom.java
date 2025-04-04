@@ -28,7 +28,7 @@ public class ServiceRoom {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "service_id", nullable = false)
-    private Service service;
+    private ServiceEntity serviceEntity;
 
     @Column(name = "time")
     private Instant time;

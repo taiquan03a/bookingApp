@@ -1,7 +1,7 @@
 package com.ptit.booking.dto.hotelDetail;
 
 import com.ptit.booking.dto.policy.PolicyRoom;
-import com.ptit.booking.model.Service;
+import com.ptit.booking.model.ServiceEntity;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,7 +14,7 @@ public class RoomResponse {
     private String roomName;
     private int area;
     private String bed;
-    private Set<Service> serviceList;
+    private Set<ServiceEntity> serviceEntityList;
     private int selectDay;
     private float price;
     private int roomQuantity;

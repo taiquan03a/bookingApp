@@ -4,17 +4,15 @@ import com.ptit.booking.dto.hotel.FilterRequest;
 import com.ptit.booking.model.Booking;
 import com.ptit.booking.model.Hotel;
 import com.ptit.booking.model.Room;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
-import jakarta.persistence.criteria.Predicate;
 import java.util.*;
 
 public class HotelSpecification {
-    public static Specification<Hotel> filterHotels(FilterRequest filterRequest) {
+    public static Specification<Hotel> filterHotels(FilterRequest filterRequest,String sortBy,String sort) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -22,20 +20,16 @@ public class HotelSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("location").get("id"), filterRequest.getLocationId()));
             }
 
-            if (filterRequest.getAdults() > 0) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("maxAdults"), filterRequest.getAdults()));
-            }
-
-            if (filterRequest.getChildren() > 0) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("maxChildren"), filterRequest.getChildren()));
-            }
-
             if (filterRequest.getRoomNumber() > 0) {
                 // Subquery để tính tổng số phòng của khách sạn
                 Subquery<Long> totalRoomsSubquery = query.subquery(Long.class);
                 Root<Room> roomRoot = totalRoomsSubquery.from(Room.class);
                 totalRoomsSubquery.select(criteriaBuilder.coalesce(criteriaBuilder.sum(roomRoot.get("roomCount")), 0L));
-                totalRoomsSubquery.where(criteriaBuilder.equal(roomRoot.get("hotel"), root));
+                totalRoomsSubquery.where(
+                        criteriaBuilder.greaterThanOrEqualTo(roomRoot.get("maxAdults"), filterRequest.getAdults()),
+                        criteriaBuilder.greaterThanOrEqualTo(roomRoot.get("maxChildren"), filterRequest.getChildren()),
+                        criteriaBuilder.equal(roomRoot.get("hotel"), root)
+                );
 
                 // Subquery để tính tổng số phòng đã được booked
                 Subquery<Long> bookedRoomsSubquery = query.subquery(Long.class);
@@ -76,13 +70,27 @@ public class HotelSpecification {
 
                 predicates.add(criteriaBuilder.exists(subquery));
             }
+            if ("price".equals(sortBy)) {
+                Subquery<BigDecimal> minPriceSubquery = query.subquery(BigDecimal.class);
+                Root<Room> roomRoot = minPriceSubquery.from(Room.class);
+                minPriceSubquery.select(criteriaBuilder.min(roomRoot.get("price")))
+                        .where(criteriaBuilder.equal(roomRoot.get("hotel"), root));
+
+                query.orderBy("asc".equals(sort) ?
+                        criteriaBuilder.asc(minPriceSubquery) :
+                        criteriaBuilder.desc(minPriceSubquery));
+            } else if ("rating".equals(sortBy)) {
+                query.orderBy("asc".equals(sort) ?
+                        criteriaBuilder.asc(root.get("rating")) :
+                        criteriaBuilder.desc(root.get("rating")));
+            }
 
 
-//            if (!filterRequest.getServiceIds().isEmpty()) {
-//                for (Long serviceId : filterRequest.getServiceIds()) {
-//                    predicates.add(criteriaBuilder.isTrue(root.join("services").get("id").in(serviceId)));
-//                }
-//            }
+            if (!filterRequest.getServiceIds().isEmpty()) {
+                for (Long serviceId : filterRequest.getServiceIds()) {
+                    predicates.add(criteriaBuilder.isTrue(root.join("services").get("id").in(serviceId)));
+                }
+            }
 
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

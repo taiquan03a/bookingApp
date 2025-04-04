@@ -2,6 +2,7 @@ package com.ptit.booking.model;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import jakarta.persistence.*;
@@ -58,6 +59,10 @@ public class User implements UserDetails {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
+
+    @Size(max = 255)
+    @Column(name = "avatar")
+    private String avatar;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

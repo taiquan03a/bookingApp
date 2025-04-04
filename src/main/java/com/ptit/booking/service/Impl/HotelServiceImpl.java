@@ -1,40 +1,37 @@
 package com.ptit.booking.service.Impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
-import com.ptit.booking.dto.hotel.FilterRequest;
-import com.ptit.booking.dto.hotel.HomeDto;
-import com.ptit.booking.dto.hotel.HotelRequest;
+import com.ptit.booking.dto.feedback.Comment;
+import com.ptit.booking.dto.hotel.*;
 import com.ptit.booking.dto.hotelDetail.*;
-import com.ptit.booking.dto.hotelDetail.Review;
-import com.ptit.booking.dto.policy.PolicyRoom;
-import com.ptit.booking.enums.EnumServiceType;
+import com.ptit.booking.dto.hotelDetail.ReviewDto;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
-import com.ptit.booking.mapping.RoomResponseMapper;
 import com.ptit.booking.model.*;
-import com.ptit.booking.repository.HotelRepository;
-import com.ptit.booking.repository.PromotionRepository;
-import com.ptit.booking.repository.RoomRepository;
-import com.ptit.booking.repository.ServiceRepository;
+import com.ptit.booking.repository.*;
 import com.ptit.booking.service.HotelService;
 import com.ptit.booking.specification.HotelSpecification;
-import com.ptit.booking.specification.RoomSpecification;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.redis.core.ListOperations;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -49,12 +46,22 @@ public class HotelServiceImpl implements HotelService {
     private final PromotionRepository promotionRepository;
     private final RoomRepository roomRepository;
     private final ServiceRepository serviceRepository;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final LocationRepository locationRepository;
+    private static final int MAX_HISTORY = 10;
+    private final ReviewRepository reviewRepository;
     private String apiKey = "fsq3VsauLSw5an6aSmbScZFmlw1nco2b+9ozuSaKfVJzdK4=";
 
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
-    public ResponseEntity<?> home() {
+    public ResponseEntity<?> home(Principal principal) {
+        User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
+        List<SearchHistory> historySearchList = new ArrayList<>();
+        if(user != null){
+            historySearchList = getSearchHistory(user.getId());
+        }
         List<Promotion> promotions = promotionRepository.findAll();
         List<HomeDto> homeDtoList = new ArrayList<>();
         for (Promotion promotion : promotions) {
@@ -69,13 +76,17 @@ public class HotelServiceImpl implements HotelService {
                         .promotionName(promotion.getName())
                         .sumReview(hotel.getFeedbackSum())
                         .price(roomRepository.getRoomPriceMin(hotel))
-                        .imageUrl(hotel.getImages().stream().findFirst().get().getUrl())
+                        .imageUrl(hotel.getImages()
+                                .stream()
+                                .findFirst()
+                                .orElseThrow(() -> new AppException(ErrorCode.ROOM_NOT_FOUND))
+                                .getUrl())
                         .build();
                 hotelRequestList.add(hotelRequest);
             }
             HomeDto homeDto = HomeDto.builder()
                     .hotelRequestList(hotelRequestList)
-                    .historySearchList(new ArrayList<>())
+                    .historySearchList(historySearchList)
                     .build();
             homeDtoList.add(homeDto);
         }
@@ -85,14 +96,75 @@ public class HotelServiceImpl implements HotelService {
                 .data(homeDtoList)
                 .build());
     }
+    private List<SearchHistory> getSearchHistory(Long userId) {
+        try {
+            ListOperations<String, String> listOps = redisTemplate.opsForList();
+            String key = "searchHistory:" + userId;
+            List<String> searchList = listOps.range(key, 0, -1);
+
+            return searchList.stream()
+                    .map(json -> {
+                        try {
+                            return objectMapper.readValue(json, SearchHistory.class);
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                            return null;
+                        }
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return List.of();
+        }
+    }
 
     @Override
-    public ResponseEntity<?> search(String sortBy, String sort, int page, FilterRequest filterRequest) {
-        Pageable pageable = PageRequest.of(page, 5,
-                sort.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending());
+    public ResponseEntity<?> search(String sortBy, String sort, int page, FilterRequest filterRequest, Principal principal) throws JsonProcessingException {
+        User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
+        Pageable pageable = PageRequest.of(page, 5);
+        if(user != null){
+            SearchHistory search = SearchHistory.builder()
+                    .location(locationRepository
+                            .findById(filterRequest.getLocationId())
+                            .orElseThrow(() -> new AppException(ErrorCode.LOCATION_NOT_FOUND))
+                            .getName())
+                    .checkIn(filterRequest.getCheckin())
+                    .checkOut(filterRequest.getCheckout())
+                    .adults(filterRequest.getAdults())
+                    .children(filterRequest.getChildren())
+                    .rooms(filterRequest.getRoomNumber())
+                    .build();
 
-        Page<Hotel> hotels = hotelRepository.findAllWithDetails(HotelSpecification.filterHotels(filterRequest), pageable);
+            ListOperations<String, String> listOps = redisTemplate.opsForList();
+            String key = "searchHistory:" + user.getId();
+            String searchJson = objectMapper.writeValueAsString(search);
 
+            // Lấy toàn bộ lịch sử tìm kiếm hiện có
+            List<String> searchList = listOps.range(key, 0, -1);
+
+            // Xóa lịch sử cũ của cùng một địa điểm (nếu có)
+            if (searchList != null) {
+                for (String json : searchList) {
+                    try {
+                        SearchHistory oldSearch = objectMapper.readValue(json, SearchHistory.class);
+                        if (oldSearch.getLocation().equals(search.getLocation())) {
+                            listOps.remove(key, 1, json); // Xóa mục cũ
+                            break; // Dừng lại ngay khi tìm thấy mục cần xóa
+                        }
+                    } catch (JsonProcessingException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            // Lưu lịch sử mới vào đầu danh sách
+            listOps.leftPush(key, searchJson);
+
+            // Giữ tối đa MAX_HISTORY mục
+            listOps.trim(key, 0, MAX_HISTORY - 1);
+
+        }
+        Page<Hotel> hotels = hotelRepository.findAll(HotelSpecification.filterHotels(filterRequest,sortBy,sort), pageable);
         Page<HotelRequest> hotelRequestPage = hotels.map(hotel -> new HotelRequest(
                 hotel.getId(),
                 hotel.getName(),
@@ -135,13 +207,77 @@ public class HotelServiceImpl implements HotelService {
                     .build());
         }
         Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        Review review = Review.builder()
+        List<Review> reviewList = reviewRepository.findByHotel(hotel);
+        List<Comment> commentList = new ArrayList<>();
+        int fiveStar = 0;
+        int fourStar = 0;
+        int threeStar = 0;
+        int twoStar = 0;
+        int oneStar = 0;
+        int ratingHotel = 0;
+        int ratingRoom = 0;
+        int ratingLocation = 0;
+        int ratingService = 0;
+        for(Review review : reviewList) {
+            Comment comment = Comment.builder()
+                    .username(review.getUser().getUsername())
+                    .urlAvatar(review.getUser().getAvatar())
+                    .comment(review.getComment())
+                    .rating(review.getRatingHotel())
+                    .build();
+            commentList.add(comment);
+
+            ratingHotel += review.getRatingHotel();
+            ratingRoom += review.getRatingRoom();
+            ratingLocation += review.getRatingLocation();
+            ratingService += review.getRatingService();
+
+            if(review.getRatingHotel() == 5) fiveStar ++;
+            if(review.getRatingRoom() == 5) fiveStar ++;
+            if(review.getRatingLocation() == 5) fiveStar ++;
+            if(review.getRatingService() == 5) fiveStar ++;
+
+            if(review.getRatingHotel() == 4) fourStar ++;
+            if(review.getRatingRoom() == 4) fourStar ++;
+            if(review.getRatingLocation() == 4) fourStar ++;
+            if(review.getRatingService() == 4) fourStar ++;
+
+            if(review.getRatingHotel() == 3) threeStar ++;
+            if(review.getRatingRoom() == 3) threeStar ++;
+            if(review.getRatingLocation() == 3) threeStar ++;
+            if(review.getRatingService() == 3) threeStar ++;
+
+            if(review.getRatingHotel() == 2) twoStar ++;
+            if(review.getRatingRoom() == 2) twoStar ++;
+            if(review.getRatingLocation() == 2) twoStar ++;
+            if(review.getRatingService() == 2) twoStar ++;
+
+            if(review.getRatingHotel() == 1) oneStar ++;
+            if(review.getRatingRoom() == 1) oneStar ++;
+            if(review.getRatingLocation() == 1) oneStar ++;
+            if(review.getRatingService() == 1) oneStar ++;
+
+        }
+        Feedback feedback = Feedback.builder()
+                .comments(commentList)
+                .fiveStar((float) (Math.round(((float) fiveStar * 100 / (4 * reviewList.size())) * 100.0) / 100.0))
+                .fourStar((float) (Math.round(((float) fourStar * 100 / (4 * reviewList.size())) * 100.0) / 100.0))
+                .threeStar((float) (Math.round(((float) threeStar * 100 / (4 * reviewList.size())) * 100.0) / 100.0))
+                .twoStar((float) (Math.round(((float)twoStar * 100 / (4 * reviewList.size())) * 100.0) / 100.0))
+                .oneStar((float) (Math.round(((float) oneStar * 100 / (4 * reviewList.size())) * 100.0) / 100.0))
+                .ratingHotel((float) (Math.round(((float) ratingHotel/reviewList.size()) * 10.0) / 10.0))
+                .ratingRoom((float) (Math.round(((float) ratingRoom/reviewList.size()) * 10.0) / 10.0))
+                .ratingLocation((float) (Math.round(((float) ratingLocation/reviewList.size()) * 10.0) / 10.0))
+                .ratingService((float) (Math.round(((float) ratingService/reviewList.size()) * 10.0) / 10.0))
+                .build();
+        ReviewDto review = ReviewDto.builder()
                 .description(hotel.getDescription())
                 .amenities(hotel.getAmenities())
                 .rating(hotel.getRating())
                 .phoneNumber("123456789")
                 .location(hotel.getLocation().getName())
                 .sumReview(hotel.getFeedbackSum())
+                .feedback(feedback)
                 .build();
         NearBy nearBy = NearBy.builder()
                 .descriptionLocation(hotel.getLocation().getDescription())
@@ -166,57 +302,7 @@ public class HotelServiceImpl implements HotelService {
                 .build());
     }
 
-    @Override
-    @Transactional
-    public ResponseEntity<?> selectRooms(SelectRoomRequest selectRoomRequest) {
-        Hotel hotel = hotelRepository.findById(selectRoomRequest.getHotelId())
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        Specification<Room> specRoomAvi = RoomSpecification.availableRooms(selectRoomRequest,hotel);
-        List<RoomResponse> re = roomRepository.findAll(specRoomAvi)
-                .stream()
-                .map(
-                        room -> mapRoomResponse(
-                                room,
-                                (int) ChronoUnit.DAYS.between(
-                                        selectRoomRequest.getCheckInDate(),
-                                        selectRoomRequest.getCheckOutDate()
-                                ),
-                                roomRepository.countAvailableRoom(
-                                        room,selectRoomRequest.getCheckInDate(),
-                                        selectRoomRequest.getCheckOutDate()
-                                )
-                        )
-                )
-                .toList();
-        return ResponseEntity.ok(ApiResponse.builder()
-                .statusCode(HttpStatus.OK.value())
-                .message(SuccessMessage.LIST_ROOM_AVAILABLE + selectRoomRequest.getHotelId())
-                .data(re)
-                .build());
-    }
-    private RoomResponse mapRoomResponse(Room room, int selectDay,int availableRoom) {
-        Set<com.ptit.booking.model.Service> serviceSet = serviceRepository.findAllByRoom(room);
-        Set<PolicyRoom> policyRoomList = new LinkedHashSet<>();
-        for(HotelPolicy hotelPolicy:room.getHotel().getHotelPolicies()){
-            PolicyRoom policyRoom = PolicyRoom.builder()
-                    .policyId(hotelPolicy.getPolicy().getId())
-                    .policyDescription(hotelPolicy.getDescription())
-                    .policyName(hotelPolicy.getPolicy().getName())
-                    .build();
-            policyRoomList.add(policyRoom);
-        }
-        return RoomResponse.builder()
-                .roomId(room.getId())
-                .roomName(room.getName())
-                .area(room.getArea())
-                .bed(room.getBed())
-                .serviceList(serviceSet)
-                .selectDay(selectDay)
-                .price(selectDay * room.getPrice().floatValue())
-                .roomQuantity(availableRoom)
-                .policyRoomList(policyRoomList)
-                .build();
-    }
+
     public List<Activity> searchPlaces(String location) {
         // 1. Get coordinates from OpenStreetMap
         String geocodeUrl = "https://nominatim.openstreetmap.org/search";

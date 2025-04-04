@@ -13,7 +13,7 @@ import java.util.Set;
 @Setter
 @Entity
 @Table(name = "service")
-public class Service {
+public class ServiceEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -35,6 +35,6 @@ public class Service {
     private String description;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "service")
+    @OneToMany(mappedBy = "serviceEntity")
     private Set<ServiceRoom> serviceRooms = new LinkedHashSet<>();
 }
