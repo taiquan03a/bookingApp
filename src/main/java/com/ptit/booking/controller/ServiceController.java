@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("service")
+@RequestMapping("api/service")
 public class ServiceController {
     private final ServiceEntityService serviceEntityService;
 
