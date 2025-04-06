@@ -2,6 +2,7 @@ package com.ptit.booking.exception;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
 import java.io.Serializable;
@@ -9,6 +10,7 @@ import java.util.Date;
 
 @Data
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse implements Serializable {
     private int statusCode;
     private String message;

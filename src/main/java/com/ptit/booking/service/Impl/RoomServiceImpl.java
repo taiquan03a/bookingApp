@@ -5,13 +5,13 @@ import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.hotelDetail.RoomResponse;
 import com.ptit.booking.dto.hotelDetail.SelectRoomRequest;
 import com.ptit.booking.dto.policy.PolicyRoom;
+import com.ptit.booking.dto.promotion.PromotionBookingRoom;
+import com.ptit.booking.dto.room.BookingRoomRequest;
+import com.ptit.booking.enums.EnumPromotionType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
-import com.ptit.booking.model.Hotel;
-import com.ptit.booking.model.HotelPolicy;
-import com.ptit.booking.model.Room;
-import com.ptit.booking.model.ServiceEntity;
+import com.ptit.booking.model.*;
 import com.ptit.booking.repository.HotelRepository;
 import com.ptit.booking.repository.RoomRepository;
 import com.ptit.booking.repository.ServiceRepository;
@@ -21,9 +21,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.Principal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -33,7 +36,7 @@ import java.util.Set;
 import static com.ptit.booking.constants.ErrorMessage.CHECKIN_AFTER_CHECKOUT;
 import static com.ptit.booking.constants.ErrorMessage.CHECKIN_MUST_TODAY_OR_FUTURE;
 
-@org.springframework.stereotype.Service
+@Service
 @Transactional
 @RequiredArgsConstructor
 public class RoomServiceImpl implements RoomService {
@@ -88,6 +91,12 @@ public class RoomServiceImpl implements RoomService {
                 .build());
     }
 
+    @Override
+    public ResponseEntity<?> bookingRooms(BookingRoomRequest bookingRoomRequest, Principal principal) {
+
+        return null;
+    }
+
 
     private RoomResponse mapRoomResponse(Room room, int selectDay,int availableRoom) {
         Set<ServiceEntity> serviceEntitySet = serviceRepository.findAllByRoom(room);
@@ -100,6 +109,29 @@ public class RoomServiceImpl implements RoomService {
                     .build();
             policyRoomList.add(policyRoom);
         }
+        List<Promotion> promotionList = room.getHotel().getPromotions()
+                .stream()
+                .filter(Promotion::getStatus)
+                .filter(promotion -> LocalDateTime.now().isAfter(promotion.getStartDate()))
+                .filter(promotion -> LocalDateTime.now().isBefore(promotion.getEndDate()))
+                .toList();
+        float originalPrice = room.getPrice().floatValue();
+        float promotionPrice = promotionList.stream()
+                .map(promotion -> {
+                   if(promotion.getDiscountType().equals(EnumPromotionType.PERCENTAGE.name())){
+                       float discountPercentage = Float.parseFloat(promotion.getDiscountValue().replace("%", ""));
+                       return originalPrice * (discountPercentage / 100.0f);
+                   }else{
+                        return Float.parseFloat(promotion.getDiscountValue());
+                   }
+                })
+                .reduce(0.0f, Float::sum);
+        float finalPrice = (originalPrice - promotionPrice) * selectDay;
+        PromotionBookingRoom promotionBookingRoom = PromotionBookingRoom.builder()
+                .id(promotionList.stream().findFirst().get().getId())
+                .discountValue(promotionList.stream().findFirst().get().getDiscountValue())
+                .name(promotionList.stream().findFirst().get().getName())
+                .build();
         return RoomResponse.builder()
                 .roomId(room.getId())
                 .roomName(room.getName())
@@ -107,7 +139,9 @@ public class RoomServiceImpl implements RoomService {
                 .bed(room.getBed())
                 .serviceEntityList(serviceEntitySet)
                 .selectDay(selectDay)
-                .price(selectDay * room.getPrice().floatValue())
+                .promotionPrice(originalPrice * selectDay)
+                .price(finalPrice)
+                .promotion(promotionBookingRoom)
                 .roomQuantity(availableRoom)
                 .policyRoomList(policyRoomList)
                 .build();

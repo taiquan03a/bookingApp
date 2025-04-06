@@ -8,9 +8,7 @@ import java.time.LocalDate;
 public class RoomRequest {
     private Long roomId;
     private int roomQuantity;
-    private LocalDate checkInDate;
-    private LocalDate checkOutDate;
     private int adults;
     private int children;
-
+    private float price;
 }
