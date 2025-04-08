@@ -1,6 +1,6 @@
 package com.ptit.booking.service.Impl;
 
-import com.ptit.booking.dto.room.BookingRoomRequest;
+import com.ptit.booking.dto.booking.BookingRoomRequest;
 import com.ptit.booking.repository.CouponRepository;
 import com.ptit.booking.repository.RoomRepository;
 import com.ptit.booking.repository.ServiceRepository;

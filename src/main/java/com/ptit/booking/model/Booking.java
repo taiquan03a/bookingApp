@@ -7,8 +7,11 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -47,8 +50,23 @@ public class Booking {
     @JoinColumn(name = "hotel_id")
     private Hotel hotel;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
-    private Room room;
+
+    @Column(name = "total_price", precision = 10, scale = 2)
+    private BigDecimal totalPrice;
+
+    @Column(name = "promotion_price", precision = 10, scale = 2)
+    private BigDecimal promotionPrice;
+
+    @Column(name = "coupon_price", precision = 10, scale = 2)
+    private BigDecimal couponPrice;
+
+    @Column(name = "total_service_price", precision = 10, scale = 2)
+    private BigDecimal totalServicePrice;
+
+    @OneToMany(mappedBy = "booking")
+    private Set<BookingRoom> bookingRooms = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "booking")
+    private Set<Payment> payments = new LinkedHashSet<>();
 
 }

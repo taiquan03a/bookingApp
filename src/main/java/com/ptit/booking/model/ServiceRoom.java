@@ -30,16 +30,4 @@ public class ServiceRoom {
     @JoinColumn(name = "service_id", nullable = false)
     private ServiceEntity serviceEntity;
 
-    @Column(name = "time")
-    private Instant time;
-
-    @Size(max = 255)
-    @Column(name = "note")
-    private String note;
-
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
-
 }

@@ -21,7 +21,7 @@ public class HotelController {
     public ResponseEntity<?> home(Principal principal) {
         return hotelService.home(principal);
     }
-    @GetMapping("/filter")
+    @PostMapping("/filter")
     public ResponseEntity<?> filter(
             @RequestParam(value = "sortBy",required = false,defaultValue = "price") String sortBy,
             @RequestParam(value = "sort",required = false,defaultValue = "asc") String sort,

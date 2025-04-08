@@ -49,7 +49,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> , JpaSpecifica
 
     @Query("SELECT (r.roomCount - COALESCE(SUM(b.roomCount), 0)) " +
             "FROM Room r " +
-            "LEFT JOIN Booking b ON r = b.room " +
+            "LEFT JOIN BookingRoom br ON r = br.room " +
+            "LEFT JOIN Booking b ON br.booking = b " +
             "AND b.status IN ('BOOKED','CHECKIN') " +
             "AND (" +
             "   :checkin BETWEEN b.checkIn AND b.checkOut " +

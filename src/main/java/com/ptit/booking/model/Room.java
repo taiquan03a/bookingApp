@@ -61,10 +61,9 @@ public class Room {
 
     @OneToMany(mappedBy = "room")
     @JsonIgnore
-    private Set<Booking> bookings = new LinkedHashSet<>();
+    private Set<ServiceRoom> serviceRooms = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "room")
-    @JsonIgnore
-    private Set<ServiceRoom> serviceRooms = new LinkedHashSet<>();
+    private Set<BookingRoom> bookingRooms = new LinkedHashSet<>();
 
 }

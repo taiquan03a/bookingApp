@@ -1,5 +1,6 @@
-package com.ptit.booking.dto.room;
+package com.ptit.booking.dto.booking;
 
+import com.ptit.booking.dto.room.RoomRequest;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -10,4 +11,5 @@ public class BookingRoomRequest {
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
     List<RoomRequest> roomRequestList;
+
 }

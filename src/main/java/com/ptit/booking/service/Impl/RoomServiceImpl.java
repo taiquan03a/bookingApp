@@ -6,7 +6,7 @@ import com.ptit.booking.dto.hotelDetail.RoomResponse;
 import com.ptit.booking.dto.hotelDetail.SelectRoomRequest;
 import com.ptit.booking.dto.policy.PolicyRoom;
 import com.ptit.booking.dto.promotion.PromotionBookingRoom;
-import com.ptit.booking.dto.room.BookingRoomRequest;
+import com.ptit.booking.dto.booking.BookingRoomRequest;
 import com.ptit.booking.enums.EnumPromotionType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
