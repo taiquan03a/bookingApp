@@ -62,4 +62,5 @@ public interface RoomRepository extends JpaRepository<Room, Long> , JpaSpecifica
     int countAvailableRoom(@Param("room") Room room,
                            @Param("checkin") LocalDate checkin,
                            @Param("checkout") LocalDate checkout);
+    boolean existsRoomByHotel(Hotel hotel);
 }

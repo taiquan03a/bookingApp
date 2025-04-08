@@ -8,6 +8,7 @@ import java.util.List;
 
 @Data
 public class BookingRoomRequest {
+    private Long hotelId;
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
     List<RoomRequest> roomRequestList;

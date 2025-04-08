@@ -21,13 +21,13 @@ spring:
     url: jdbc:mysql://booking.mysql.database.azure.com:3306/booking
     username: quannt
   jpa:
-    show-sql: false
+    show-sql: true
     hibernate:
       ddl-auto: none
       dialect: org.hibernate.dialect.MySQLDialect
     properties:
       hibernate:
-        format_sql: false
+        format_sql: true
   data:
     redis:
       host: localhost

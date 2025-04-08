@@ -9,6 +9,7 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -81,5 +82,11 @@ public class Hotel {
 
     @OneToMany(mappedBy = "hotel")
     private Set<HotelPolicy> hotelPolicies = new LinkedHashSet<>();
+
+    @Column(name = "check_in_time")
+    private LocalTime checkInTime;
+
+    @Column(name = "check_out_time")
+    private LocalTime checkOutTime;
 
 }

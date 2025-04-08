@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -37,4 +38,8 @@ public class ServiceEntity {
     @JsonIgnore
     @OneToMany(mappedBy = "serviceEntity")
     private Set<ServiceRoom> serviceRooms = new LinkedHashSet<>();
+
+    @Column(name = "price", precision = 10, scale = 2)
+    private BigDecimal price;
+
 }

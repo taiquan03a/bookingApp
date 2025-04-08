@@ -1,5 +1,6 @@
 package com.ptit.booking.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -31,6 +32,7 @@ public class Policy {
     private String description;
 
     @OneToMany(mappedBy = "policy")
+    @JsonIgnore
     private Set<HotelPolicy> hotelPolicies = new LinkedHashSet<>();
 
 }

@@ -10,4 +10,5 @@ public class SuccessMessage {
     public static final String LOCATION_PAGE = "Location page successfully";
     public static final String INFO_PAGE = "Info page successfully";
     public static final String LIST_COUPON_CAN_USE = "List coupon can use successfully";
+    public static String BOOKING_DETAIL_SUCCESSFULLY = "Booking detail successfully";
 }
