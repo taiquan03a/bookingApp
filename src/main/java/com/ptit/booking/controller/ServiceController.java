@@ -3,9 +3,9 @@ package com.ptit.booking.controller;
 import com.ptit.booking.service.ServiceEntityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -16,6 +16,10 @@ public class ServiceController {
     @GetMapping("get_list")
     public ResponseEntity<?> getList() {
         return serviceEntityService.getServiceRooms();
+    }
+    @GetMapping("get_by_category")
+    public ResponseEntity<?> getByCategory(@RequestParam List<Long> roomIdList) {
+        return serviceEntityService.getServiceBookings(roomIdList);
     }
 
 }
