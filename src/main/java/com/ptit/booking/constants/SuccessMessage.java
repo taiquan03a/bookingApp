@@ -12,4 +12,5 @@ public class SuccessMessage {
     public static final String LIST_COUPON_CAN_USE = "List coupon can use successfully";
     public static String BOOKING_DETAIL_SUCCESSFULLY = "Booking detail successfully";
     public static final String LIST_SERVICE_ROOMS_SUCCESSFULLY = "List service rooms successfully";
+    public static final String SERVICE_ROOMS_SUCCESSFULLY = "Service rooms successfully";
 }

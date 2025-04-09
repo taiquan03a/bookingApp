@@ -1,5 +1,6 @@
 package com.ptit.booking.controller;
 
+import com.ptit.booking.dto.serviceRoom.RoomSelectRequest;
 import com.ptit.booking.service.ServiceEntityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +18,13 @@ public class ServiceController {
     public ResponseEntity<?> getList() {
         return serviceEntityService.getServiceRooms();
     }
-    @GetMapping("get_by_category")
-    public ResponseEntity<?> getByCategory(@RequestParam List<Long> roomIdList) {
-        return serviceEntityService.getServiceBookings(roomIdList);
+    @PostMapping("get_by_category")
+    public ResponseEntity<?> getByCategory(@RequestBody List<RoomSelectRequest> roomSelectRequestList) {
+        return serviceEntityService.getServiceBookings(roomSelectRequestList);
+    }
+    @GetMapping("get_detail/{id}")
+    public ResponseEntity<?> getDetail(@PathVariable Long id) {
+        return serviceEntityService.getServiceDetail(id);
     }
 
 }
