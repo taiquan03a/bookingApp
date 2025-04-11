@@ -7,6 +7,5 @@ import java.util.List;
 public class ServiceBookingRequest {
     private Long serviceId;
     private List<RoomBookingRequest> roomBookingRequestList;
-
 }
 

@@ -1,10 +1,12 @@
 package com.ptit.booking.dto.serviceRoom;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class RoomBookingRequest {
+@Builder
+public class BookingRoomResponse {
     private Long roomId;
+    private String roomName;
     private Long quantity;
 }

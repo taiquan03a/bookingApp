@@ -3,10 +3,7 @@ package com.ptit.booking.service.Impl;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.room.RoomChoseService;
-import com.ptit.booking.dto.serviceRoom.RoomSelectRequest;
-import com.ptit.booking.dto.serviceRoom.ServiceBookingRequest;
-import com.ptit.booking.dto.serviceRoom.ServiceRoomBooking;
-import com.ptit.booking.dto.serviceRoom.ServiceRoomSelect;
+import com.ptit.booking.dto.serviceRoom.*;
 import com.ptit.booking.enums.EnumServiceType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
@@ -19,6 +16,8 @@ import com.ptit.booking.repository.ServiceRepository;
 import com.ptit.booking.repository.ServiceRoomRepository;
 import com.ptit.booking.service.ServiceEntityService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -26,11 +25,13 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ServiceEntityServiceImpl implements ServiceEntityService {
+    private static final Logger log = LoggerFactory.getLogger(ServiceEntityServiceImpl.class);
     private final ServiceRepository serviceRepository;
     private final RoomRepository roomRepository;
     private final ServiceMapper serviceMapper;
@@ -85,8 +86,72 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
     @Override
     public ResponseEntity<?> getCartService(List<ServiceBookingRequest> serviceBookingRequestList) {
+        List<ServiceBookingResponse> serviceBookingResponseList = new ArrayList<>();
+        List<PriceService> priceServiceList = new ArrayList<>();
+        for(ServiceBookingRequest serviceBookingRequest : serviceBookingRequestList) {
+            ServiceEntity serviceEntity = serviceRepository
+                    .findById(serviceBookingRequest.getServiceId())
+                    .orElseThrow(()-> new AppException(ErrorCode.SERVICE_NOT_FOUND));
 
-        return null;
+            Map<Long, Room> roomMap = roomRepository.findAllById(
+                            serviceBookingRequest.getRoomBookingRequestList().stream()
+                                    .map(RoomBookingRequest::getRoomId)
+                                    .toList()
+                    ).stream()
+                    .collect(Collectors.toMap(Room::getId, Function.identity()));
+            List<BookingRoomResponse> responseList = serviceBookingRequest.getRoomBookingRequestList().stream()
+                    .map(req -> {
+                        Room room = roomMap.get(req.getRoomId());
+                        if (room == null) {
+                            throw new AppException(ErrorCode.ROOM_NOT_FOUND);
+                        }
+                        return BookingRoomResponse.builder()
+                                .roomId(req.getRoomId())
+                                .roomName(room.getName())
+                                .quantity(req.getQuantity())
+                                .build();
+                    })
+                    .toList();
+            ServiceBookingResponse serviceBookingResponse = ServiceBookingResponse.builder()
+                    .serviceId(serviceEntity.getId())
+                    .serviceName(serviceEntity.getName())
+                    .bookingRoomResponseList(responseList)
+                    .build();
+            serviceBookingResponseList.add(serviceBookingResponse);
+            long totalQuantity = serviceBookingRequest.getRoomBookingRequestList()
+                    .stream()
+                    .map(RoomBookingRequest::getQuantity)
+                    .reduce(0L, Long::sum);
+            PriceService priceService = PriceService.builder()
+                    .serviceName(serviceEntity.getName())
+                    .price(String.valueOf(serviceEntity.getPrice()))
+                    .totalQuantity(totalQuantity)
+                    .totalPrice(String.valueOf(
+                            serviceEntity
+                                    .getPrice().
+                                    multiply(
+                                            BigDecimal.valueOf(totalQuantity)
+                                    )
+                    ))
+                    .build();
+            priceServiceList.add(priceService);
+        }
+        return ResponseEntity.ok(ApiResponse.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message(SuccessMessage.GET_CART_SUCCESSFULLY)
+                .data(
+                        ServiceBookingCart.builder()
+                            .serviceBookingList(serviceBookingResponseList)
+                            .priceServiceList(priceServiceList)
+                            .totalPrice(
+                                    priceServiceList.stream()
+                                            .map(price -> new BigDecimal(price.getTotalPrice()))
+                                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+                                            .toPlainString()
+                            )
+                            .build()
+                )
+                .build());
     }
 
     private static List<ServiceRoomSelect> mapToDtoList(List<ServiceEntity> entities, List<RoomSelectRequest> inputRoomList) {
