@@ -40,4 +40,16 @@ public class Payment {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Size(max = 50)
+    @Column(name = "app_trans_id", length = 50)
+    private String appTransId;
+
+    @Size(max = 50)
+    @Column(name = "zp_trans_id", length = 50)
+    private String zpTransId;
+
+    @Size(max = 255)
+    @Column(name = "message")
+    private String message;
+
 }

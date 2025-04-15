@@ -1,5 +1,6 @@
 package com.ptit.booking.dto.room;
 
+import com.ptit.booking.dto.serviceRoom.ServiceBooked;
 import com.ptit.booking.model.Policy;
 import com.ptit.booking.model.ServiceEntity;
 import lombok.Builder;
@@ -14,6 +15,6 @@ public class RoomBooked {
     private int adults;
     private float priceRoom;
     private float priceService;
-    private List<ServiceEntity> serviceSelect;
+    private List<ServiceBooked> serviceSelect;
     private List<Policy> policyBooked;
 }

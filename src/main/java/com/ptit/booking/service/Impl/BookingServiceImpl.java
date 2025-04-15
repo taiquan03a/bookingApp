@@ -7,6 +7,8 @@ import com.ptit.booking.dto.booking.BookingDetail;
 import com.ptit.booking.dto.booking.BookingRoomRequest;
 import com.ptit.booking.dto.room.RoomBooked;
 import com.ptit.booking.dto.room.RoomRequest;
+import com.ptit.booking.dto.serviceRoom.ServiceBooked;
+import com.ptit.booking.dto.serviceRoom.ServiceRoomDto;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
@@ -63,29 +65,37 @@ public class BookingServiceImpl implements BookingService {
                                         .timestamp(new Date(System.currentTimeMillis()))
                                         .build()
                         );
-            List<ServiceEntity> serviceEntityList =
-                    Optional.ofNullable(roomRequest.getServiceIdList())
-                            .filter(list -> !list.isEmpty())
-                            .map(serviceRepository::findAllById)
-                            .orElse(Collections.emptyList());
+
+            List<ServiceBooked> serviceBookedList = new ArrayList<>();
+            float priceService = 0;
+            for(ServiceRoomDto service: roomRequest.getServiceList()){
+                ServiceEntity serviceEntity = serviceRepository.findById(service.getServiceId())
+                        .orElseThrow(()->new AppException(ErrorCode.SERVICE_NOT_FOUND));
+                float priceServiceCurrentRoom = serviceEntity.getPrice().floatValue() * service.getQuantity().floatValue();
+                serviceBookedList.add(ServiceBooked.builder()
+                                .serviceId(serviceEntity.getId())
+                                .serviceType(serviceEntity.getServiceType())
+                                .serviceName(serviceEntity.getName())
+                                .image(serviceEntity.getImage())
+                                .description(serviceEntity.getDescription())
+                                .price(String.valueOf(serviceEntity.getPrice()))
+                                .quantity(service.getQuantity())
+                                .priceBooked(String.valueOf(priceServiceCurrentRoom))
+                        .build());
+                priceService += priceServiceCurrentRoom;
+            }
 
             RoomBooked roomBooked = RoomBooked.builder()
                     .roomId(roomSelect.getId())
                     .roomName(roomSelect.getName())
                     .adults(roomRequest.getAdults())
-                    .serviceSelect(serviceEntityList)
+                    .serviceSelect(serviceBookedList)
                     .policyBooked(policyByHotelList)
                     .priceRoom(roomRequest.getPrice())
-                    .priceService(
-                            serviceEntityList.stream()
-                                    .map(ServiceEntity::getPrice)
-                                    .filter(Objects::nonNull) // bỏ các giá trị null
-                                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                                    .floatValue()
-                    )
+                    .priceService(priceService)
                     .build();
             totalPriceRoom += roomBooked.getPriceRoom();
-            totalPriceService += roomBooked.getPriceService();
+            totalPriceService += priceService;
             totalAdults += roomBooked.getAdults();
             roomBookedList.add(roomBooked);
         }

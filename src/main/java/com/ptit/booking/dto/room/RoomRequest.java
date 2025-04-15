@@ -1,5 +1,6 @@
 package com.ptit.booking.dto.room;
 
+import com.ptit.booking.dto.serviceRoom.ServiceRoomDto;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -12,5 +13,5 @@ public class RoomRequest {
     private int adults;
     private int children;
     private float price;
-    private List<Long> serviceIdList;
+    private List<ServiceRoomDto> serviceList;
 }

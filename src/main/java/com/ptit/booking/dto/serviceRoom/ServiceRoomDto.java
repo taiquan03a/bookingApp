@@ -1,6 +1,11 @@
 package com.ptit.booking.dto.serviceRoom;
 
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
 public class ServiceRoomDto {
-    private int id;
-    private String name;
+    private Long serviceId;
+    private Long quantity;
 }

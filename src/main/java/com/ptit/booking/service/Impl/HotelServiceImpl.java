@@ -124,6 +124,7 @@ public class HotelServiceImpl implements HotelService {
         Pageable pageable = PageRequest.of(page, 5);
         if(user != null){
             SearchHistory search = SearchHistory.builder()
+                    .locationId(filterRequest.getLocationId())
                     .location(locationRepository
                             .findById(filterRequest.getLocationId())
                             .orElseThrow(() -> new AppException(ErrorCode.LOCATION_NOT_FOUND))
@@ -159,6 +160,7 @@ public class HotelServiceImpl implements HotelService {
 
             // Lưu lịch sử mới vào đầu danh sách
             listOps.leftPush(key, searchJson);
+            System.out.println("Pushed to Redis key " + key + ": " + searchJson);
 
             // Giữ tối đa MAX_HISTORY mục
             listOps.trim(key, 0, MAX_HISTORY - 1);
