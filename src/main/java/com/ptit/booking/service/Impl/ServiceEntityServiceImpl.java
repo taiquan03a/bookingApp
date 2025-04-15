@@ -109,6 +109,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                                 .roomId(req.getRoomId())
                                 .roomName(room.getName())
                                 .quantity(req.getQuantity())
+                                .time(req.getTime())
+                                .note(req.getNote())
                                 .build();
                     })
                     .toList();

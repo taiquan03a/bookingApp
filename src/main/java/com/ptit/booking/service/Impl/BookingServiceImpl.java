@@ -80,6 +80,8 @@ public class BookingServiceImpl implements BookingService {
                                 .description(serviceEntity.getDescription())
                                 .price(String.valueOf(serviceEntity.getPrice()))
                                 .quantity(service.getQuantity())
+                                .time(service.getTime())
+                                .note(service.getNote())
                                 .priceBooked(String.valueOf(priceServiceCurrentRoom))
                         .build());
                 priceService += priceServiceCurrentRoom;
