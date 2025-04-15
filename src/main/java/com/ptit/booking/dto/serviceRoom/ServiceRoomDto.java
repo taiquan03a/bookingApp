@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class ServiceRoomDto {
-    private Long serviceId;
+    private Long id;
     private Long quantity;
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd HH:mm:ss",timezone = "Asia/Ho_Chi_Minh")
     private LocalDateTime time;

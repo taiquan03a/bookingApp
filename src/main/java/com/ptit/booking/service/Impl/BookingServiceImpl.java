@@ -69,7 +69,7 @@ public class BookingServiceImpl implements BookingService {
             List<ServiceBooked> serviceBookedList = new ArrayList<>();
             float priceService = 0;
             for(ServiceRoomDto service: roomRequest.getServiceList()){
-                ServiceEntity serviceEntity = serviceRepository.findById(service.getServiceId())
+                ServiceEntity serviceEntity = serviceRepository.findById(service.getId())
                         .orElseThrow(()->new AppException(ErrorCode.SERVICE_NOT_FOUND));
                 float priceServiceCurrentRoom = serviceEntity.getPrice().floatValue() * service.getQuantity().floatValue();
                 serviceBookedList.add(ServiceBooked.builder()
