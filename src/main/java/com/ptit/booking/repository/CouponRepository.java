@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CouponRepository extends JpaRepository<Coupon, Long> {
@@ -48,6 +49,9 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
             @Param("coupon") Coupon coupon,
             @Param("totalPrice") BigDecimal totalPrice
     );
+    @Query("select * from Coupon where Coupon.code = :code")
+    Optional<Coupon> findByCouponCode(@Param("code") String code);
+
 
 
 }

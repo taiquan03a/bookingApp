@@ -2,13 +2,14 @@ package com.ptit.booking.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 
-@Getter
-@Setter
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "booking_room")
 public class BookingRoom {
@@ -32,5 +33,11 @@ public class BookingRoom {
 
     @Column(name = "price_service", precision = 10, scale = 2)
     private BigDecimal priceService;
+
+    @Column(name = "adults")
+    private Integer adults;
+
+    @Column(name = "children")
+    private Integer children;
 
 }

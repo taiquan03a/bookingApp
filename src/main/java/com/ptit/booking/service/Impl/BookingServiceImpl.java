@@ -101,18 +101,23 @@ public class BookingServiceImpl implements BookingService {
         }
         long selectDay = ChronoUnit.DAYS.between(bookingRoomRequest.getCheckInDate(), bookingRoomRequest.getCheckOutDate());
         float totalPrice = selectDay * (totalPriceRoom + totalPriceService);
-        List<Coupon> couponList = couponRepository
-                .findBestCouponByUser(
-                        user,
-                        BigDecimal.valueOf(totalPrice)
-                );
-        float priceCoupon = 0;
+
         Coupon coupon = new Coupon();
-        if(!couponList.isEmpty()){
-            coupon = couponList.get(0);
-            priceCoupon = couponRepository.calculateDiscountAmount(
-                    coupon,BigDecimal.valueOf(totalPrice)).floatValue();
+        if(bookingRoomRequest.getCouponId() == 0){
+            List<Coupon> couponList = couponRepository
+                    .findBestCouponByUser(
+                            user,
+                            BigDecimal.valueOf(totalPrice)
+                    );
+            if(!couponList.isEmpty()){
+                coupon = couponList.get(0);
+            }
+        }else{
+            coupon = couponRepository.findById(bookingRoomRequest.getCouponId())
+                    .orElseThrow(()-> new AppException(ErrorCode.COUPON_NOT_FOUND));
         }
+        float priceCoupon  = couponRepository.calculateDiscountAmount(
+                coupon,BigDecimal.valueOf(totalPrice)).floatValue();
 
         BookingDetail bookingDetail = BookingDetail.builder()
                 .hotelId(hotel.getId())

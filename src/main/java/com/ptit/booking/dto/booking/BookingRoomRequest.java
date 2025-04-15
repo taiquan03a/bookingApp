@@ -14,6 +14,7 @@ public class BookingRoomRequest {
     private LocalDate checkInDate;
     //@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy", timezone = "Asia/Ho_Chi_Minh")
     private LocalDate checkOutDate;
+    private Long couponId;
     List<RoomRequest> roomRequestList;
 
 }
