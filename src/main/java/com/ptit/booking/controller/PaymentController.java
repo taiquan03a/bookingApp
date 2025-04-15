@@ -1,7 +1,9 @@
 package com.ptit.booking.controller;
 
 import com.ptit.booking.configuration.ZaloPayConfig;
+import com.ptit.booking.dto.booking.BookingRoomRequest;
 import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
+import com.ptit.booking.service.PaymentService;
 import com.ptit.booking.service.ZaloPayService;
 import jakarta.xml.bind.DatatypeConverter;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -21,9 +24,16 @@ import java.util.logging.Logger;
 @RequiredArgsConstructor
 @RequestMapping("api/payment")
 public class PaymentController {
+    private final PaymentService paymentService;
+
     private Logger logger = Logger.getLogger(this.getClass().getName());
     private Mac HmacSHA256;
     private final ZaloPayService zaloPayService;
+
+    @PostMapping("checkout")
+    public ResponseEntity<?> createPayment(@RequestBody BookingRoomRequest bookingRoomRequest, Principal principal) {
+        return paymentService.checkout(bookingRoomRequest,principal);
+    }
 
     @PostMapping("create_order")
     public ResponseEntity<?> createOrder(@RequestBody CreateOrderRequest createOrderRequest) {

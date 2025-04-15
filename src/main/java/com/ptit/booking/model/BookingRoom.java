@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Data
 @Builder
@@ -12,6 +14,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @Entity
 @Table(name = "booking_room")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class BookingRoom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,5 +42,8 @@ public class BookingRoom {
 
     @Column(name = "children")
     private Integer children;
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private Set<BookingServiceEntity> booingServices = new LinkedHashSet<>();
 
 }
