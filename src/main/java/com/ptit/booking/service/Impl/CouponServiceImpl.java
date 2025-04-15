@@ -1,8 +1,10 @@
 package com.ptit.booking.service.Impl;
 
+import com.ptit.booking.constants.ErrorMessage;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.coupon.CouponDto;
+import com.ptit.booking.exception.ErrorResponse;
 import com.ptit.booking.mapping.CouponMapper;
 import com.ptit.booking.model.Coupon;
 import com.ptit.booking.model.User;
@@ -14,8 +16,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -25,17 +29,18 @@ public class CouponServiceImpl implements CouponService {
     private final CouponMapper couponMapper;
 
     @Override
-    public ResponseEntity<?> getCouponByUser(Principal principal,String couponCode) {
+    public ResponseEntity<?> getCouponByUser(Principal principal, String couponCode, float totalPrice) {
         User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
-        List<Coupon> couponListByUser = couponRepository.findByUser(user);
+        if(user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
+                    .statusCode(HttpStatus.UNAUTHORIZED.value())
+                    .message(ErrorMessage.PLEASE_LOGIN)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        //List<Coupon> couponListByUser = couponRepository.findByUser(user);
         List<CouponDto> couponDtoListUse = couponMapper.toDtoList(
-                couponListByUser
-                        .stream()
-                        .filter(coupon -> coupon.getExpiryDate().isBefore(LocalDateTime.now()))
-                        .filter(coupon -> coupon.getValidFromDate().isAfter(LocalDateTime.now()))
-                        .filter(coupon -> coupon.getMaxUsage() >= coupon.getCurrentUsage())
-                        .filter(Coupon::getStatus)
-                        .toList()
+                couponRepository.findBestCouponByUser(couponCode,user, BigDecimal.valueOf(totalPrice))
         );
         return ResponseEntity.ok(ApiResponse.builder()
                 .statusCode(HttpStatus.OK.value())

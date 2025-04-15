@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface CouponRepository extends JpaRepository<Coupon, Long> {
@@ -26,6 +25,7 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
           AND c.validFromDate <= CURRENT_TIMESTAMP
           AND c.expiryDate >= CURRENT_TIMESTAMP
           AND c.minBookingAmount <= :totalPrice
+          AND c.code LIKE %:code% 
         ORDER BY 
           CASE 
             WHEN c.discountType = 'PERCENTAGE' THEN (:totalPrice * c.discountValue / 100)
@@ -33,11 +33,12 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
           END DESC
     """)
     List<Coupon> findBestCouponByUser(
+            @Param("code") String code,
             @Param("user") User user,
             @Param("totalPrice") BigDecimal totalPrice
     );
     @Query("""
-        SELECT 
+        SELECT  
           CASE 
             WHEN c.discountType = 'PERCENTAGE' THEN (:totalPrice * c.discountValue / 100)
             ELSE c.discountValue

@@ -106,6 +106,7 @@ public class BookingServiceImpl implements BookingService {
         if(bookingRoomRequest.getCouponId() == 0){
             List<Coupon> couponList = couponRepository
                     .findBestCouponByUser(
+                            "",
                             user,
                             BigDecimal.valueOf(totalPrice)
                     );
