@@ -49,8 +49,8 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
             @Param("coupon") Coupon coupon,
             @Param("totalPrice") BigDecimal totalPrice
     );
-    @Query("select * from Coupon where Coupon.code = :code")
-    Optional<Coupon> findByCouponCode(@Param("code") String code);
+    @Query("select c from Coupon c where c.code = :code")
+    Coupon findByCouponCode(@Param("code") String code);
 
 
 

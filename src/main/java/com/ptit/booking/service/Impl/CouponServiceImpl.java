@@ -25,7 +25,7 @@ public class CouponServiceImpl implements CouponService {
     private final CouponMapper couponMapper;
 
     @Override
-    public ResponseEntity<?> getCouponByUser(Principal principal) {
+    public ResponseEntity<?> getCouponByUser(Principal principal,String couponCode) {
         User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
         List<Coupon> couponListByUser = couponRepository.findByUser(user);
         List<CouponDto> couponDtoListUse = couponMapper.toDtoList(
@@ -43,6 +43,7 @@ public class CouponServiceImpl implements CouponService {
                 .data(couponDtoListUse)
                 .build());
     }
+
 
     @Override
     public ResponseEntity<?> getCouponForBooking(Principal principal, Long bookingId) {
