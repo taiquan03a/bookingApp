@@ -1,9 +1,11 @@
 package com.ptit.booking.service.Impl;
 
 import com.ptit.booking.constants.ErrorMessage;
+import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.booking.BookingRoomRequest;
 import com.ptit.booking.dto.room.RoomRequest;
 import com.ptit.booking.dto.serviceRoom.ServiceRoomDto;
+import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
 import com.ptit.booking.enums.EnumBookingStatus;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
@@ -14,6 +16,8 @@ import com.ptit.booking.service.BookingService;
 import com.ptit.booking.service.PaymentService;
 import com.ptit.booking.service.ZaloPayService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -31,6 +36,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 
 public class PaymentServiceImpl implements PaymentService {
+    private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);
     private final PaymentRepository paymentRepository;
     private final ZaloPayService zaloPayService;
     private final HotelRepository hotelRepository;
@@ -72,7 +78,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         List<BookingRoom> bookingRoomList = new ArrayList<>();
 
-        BigDecimal totalPrice = BigDecimal.ZERO;
+        BigDecimal totalPriceRoom = BigDecimal.ZERO;
         BigDecimal totalRoomNotPromotion = BigDecimal.ZERO;
         BigDecimal totalServicePrice = BigDecimal.ZERO;
 
@@ -120,23 +126,29 @@ public class PaymentServiceImpl implements PaymentService {
                     .children(roomRequest.getChildren())
                     .priceRoom(BigDecimal.valueOf(roomRequest.getPrice()))
                     .priceService(priceServiceRoom)
-                    .booingServices(new LinkedHashSet<>())
+                    .booingServices(new ArrayList<>())
                     .build();
             for(BookingServiceEntity bookingServiceEntity : bookingServiceList){
                 bookingServiceEntity.setBooking(bookingRoom);
-                bookingRoom.getBooingServices().add(bookingServiceEntity);
             }
-
+            bookingRoom.setBooingServices(bookingServiceList);
+            log.info("Number of services for bookingRoom: {}", bookingRoom.getBooingServices().size());
             bookingRoomList.add(bookingRoom);
-            totalPrice = totalPrice.add(priceRoom);
+            totalPriceRoom = totalPriceRoom.add(priceRoom);
             totalServicePrice = totalServicePrice.add(priceServiceRoom);
         }
-        BigDecimal couponPrice = couponRepository.calculateDiscountAmount(
-                couponRepository.findById(bookingRoomRequest.getCouponId())
-                        .orElseThrow(()-> new AppException(ErrorCode.COUPON_NOT_FOUND)),
-                totalPrice.add(totalServicePrice)
-        );
-        booking.setTotalPrice(totalPrice);
+
+        long selectDay = ChronoUnit.DAYS.between(bookingRoomRequest.getCheckInDate(), bookingRoomRequest.getCheckOutDate());
+        totalPriceRoom = totalPriceRoom.multiply(BigDecimal.valueOf(selectDay));
+        BigDecimal couponPrice = BigDecimal.ZERO;
+        if(bookingRoomRequest.getCouponId() != 0){
+             couponPrice = couponRepository.calculateDiscountAmount(
+                    couponRepository.findById(bookingRoomRequest.getCouponId())
+                            .orElseThrow(()-> new AppException(ErrorCode.COUPON_NOT_FOUND)),
+                     totalPriceRoom.add(totalServicePrice)
+            );
+        }
+        booking.setTotalPrice(totalPriceRoom);
         booking.setTotalServicePrice(totalServicePrice);
         booking.setPromotionPrice(totalRoomNotPromotion.subtract(totalServicePrice));
         booking.setCouponPrice(couponPrice);
@@ -145,6 +157,11 @@ public class PaymentServiceImpl implements PaymentService {
             room.setBooking(booking);
         }
         bookingRoomRepository.saveAll(bookingRoomList);
-        return null;
+
+        CreateOrderRequest createOrderRequest = CreateOrderRequest.builder()
+                .orderId(String.valueOf(booking.getId()))
+                .amount(booking.getTotalPrice().longValue())
+                .build();
+        return zaloPayService.createOrder(createOrderRequest);
     }
 }

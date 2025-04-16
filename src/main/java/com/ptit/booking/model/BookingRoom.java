@@ -1,12 +1,15 @@
 package com.ptit.booking.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.List;
 
 @Data
 @Builder
@@ -43,7 +46,7 @@ public class BookingRoom {
     @Column(name = "children")
     private Integer children;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    private Set<BookingServiceEntity> booingServices = new LinkedHashSet<>();
-
+    private List<BookingServiceEntity> booingServices = new ArrayList<>();
 }
