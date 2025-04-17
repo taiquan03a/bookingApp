@@ -31,6 +31,8 @@ public enum ErrorCode {
     ZALOPAY_ORDER_NOT_FOUND(2003, "ZaloPay order not found", HttpStatus.NOT_FOUND),
     HOTEL_NOTFOUND(2004, "Hotel not found", HttpStatus.NOT_FOUND),
     COUPON_NOT_FOUND(2005, "Coupon not found", HttpStatus.NOT_FOUND),
+    NOTIFICATION_BAD(2006, "Notification not found", HttpStatus.BAD_REQUEST),
+    NOTIFICATION_FAILED(2007, "Notification failed", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

@@ -1,16 +1,20 @@
 package com.ptit.booking.model;
 
+import com.ptit.booking.enums.EnumNotificationStatus;
+import com.ptit.booking.enums.EnumNotificationType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.Size;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
 @Entity
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "notifications")
 public class Notification {
     @Id
@@ -33,6 +37,21 @@ public class Notification {
 
     @ColumnDefault("(now())")
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Size(max = 50)
+    @Column(name = "title", length = 50)
+    private String title;
+
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private EnumNotificationStatus status;
+
+    @Column(name = "type")
+    @Enumerated(EnumType.STRING)
+    private EnumNotificationType type;
+
+    @Column(name = "send_at")
+    private LocalDateTime sendAt;
 
 }
