@@ -7,5 +7,6 @@ import java.security.Principal;
 
 public interface BookingService {
     ResponseEntity<?> booking(BookingRoomRequest bookingRoomRequest, Principal principal);
-
+    ResponseEntity<?> historyBooking(Principal principal);
+    ResponseEntity<?> cancelBooking(Long bookingId, Principal principal);
 }

@@ -15,4 +15,5 @@ public class SuccessMessage {
     public static final String SERVICE_ROOMS_SUCCESSFULLY = "Service rooms successfully";
     public static final String GET_CART_SUCCESSFULLY = "Get cart successfully";
     public static final String CREATE_ORDER_SUCCESSFULLY = "Create order successfully";
+    public static final String HISTORY_BOOKING_SUCCESSFULLY = "History booking successfully";
 }

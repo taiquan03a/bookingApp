@@ -21,4 +21,5 @@ public class ErrorMessage {
         return "Phòng mà bạn chọn không thuộc khách sạn "+ hotelName +
                 ".\n Vui lòng lựa chọn phòng phù hợp khác.";
     }
+    public static final String HOTEL_NOT_BOOKED = "Bạn chưa đặt khách sạn này.";
 }

@@ -33,6 +33,7 @@ public enum ErrorCode {
     COUPON_NOT_FOUND(2005, "Coupon not found", HttpStatus.NOT_FOUND),
     NOTIFICATION_BAD(2006, "Notification not found", HttpStatus.BAD_REQUEST),
     NOTIFICATION_FAILED(2007, "Notification failed", HttpStatus.BAD_REQUEST),
+    BOOKING_NOT_FOUND(2008, "Booking not found", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

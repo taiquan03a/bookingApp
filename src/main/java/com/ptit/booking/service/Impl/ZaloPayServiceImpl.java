@@ -3,9 +3,7 @@ package com.ptit.booking.service.Impl;
 import com.ptit.booking.configuration.ZaloPayConfig;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
-import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
-import com.ptit.booking.dto.zaloPay.CreateOrderResponse;
-import com.ptit.booking.dto.zaloPay.OrderStatusResponse;
+import com.ptit.booking.dto.zaloPay.*;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.model.Payment;
@@ -14,17 +12,23 @@ import com.ptit.booking.service.ZaloPayService;
 import com.ptit.booking.util.HMACUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONObject;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -112,13 +116,14 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             }
 
             JSONObject dataJson = new JSONObject(dataStr);
+            System.out.println("jsonStr: " + dataStr);
             log.info("ZaloPay callback data: {}", dataJson);
             String appTransId = dataJson.getString("app_trans_id");
             int amount = dataJson.getInt("amount");
             String zpTransId = dataJson.getString("zp_trans_id");
-
+            System.out.println("zaloPay callback zpTransId: " + zpTransId);
             log.info("Callback processed for app_trans_id: {}, zp_trans_id: {}", appTransId, zpTransId);
-            return Map.of("return_code", 1, "return_message", "Success");
+            return Map.of("return_code", 1, "return_message", "Success","zpTransId", zpTransId);
         } catch (Exception e) {
             log.error("Failed to process callback", e);
             return Map.of("return_code", -1, "return_message", "Callback processing failed");
@@ -194,6 +199,96 @@ public class ZaloPayServiceImpl implements ZaloPayService {
         }
     }
 
+    @Override
+    public ResponseEntity<?> refundOrder(RefundOrderRequest request) throws Exception{
+        long timestamp = System.currentTimeMillis();
+        Random rand = new Random();
+        String uid = timestamp + "" + (111 + rand.nextInt(888)); // unique id
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("app_id", ZaloPayConfig.APP_ID);
+        payload.put("m_refund_id", getCurrentTimeString("yyMMdd") +"_"+ ZaloPayConfig.APP_ID +"_"+uid);
+        payload.put("zp_trans_id", request.getZpTransId());
+        payload.put("amount", request.getAmount());
+        payload.put("description", request.getDescription());
+        payload.put("timestamp", timestamp);
+
+        String data = payload.get("app_id") +"|"+ payload.get("zp_trans_id") +"|"+ payload.get("amount")
+                +"|"+ payload.get("description") +"|"+ payload.get("timestamp");
+
+        payload.put("mac", HMACUtil.HMacHexStringEncode(HMACUtil.HMACSHA256, ZaloPayConfig.KEY1, data));
+
+        CloseableHttpClient client = HttpClients.createDefault();
+        HttpPost post = new HttpPost(ZaloPayConfig.REFUND_URL);
+
+        List<NameValuePair> params = new ArrayList<>();
+        for (Map.Entry<String, Object> e : payload.entrySet()) {
+            if (e.getValue() != null) {
+                params.add(new BasicNameValuePair(e.getKey(), e.getValue().toString()));
+            }
+        }
+        post.setEntity(new UrlEncodedFormEntity(params));
+
+        CloseableHttpResponse res = client.execute(post);
+        BufferedReader rd = new BufferedReader(new InputStreamReader(res.getEntity().getContent()));
+        StringBuilder resultJsonStr = new StringBuilder();
+        String line;
+
+        while ((line = rd.readLine()) != null) {
+            resultJsonStr.append(line);
+        }
+
+        JSONObject result = new JSONObject(resultJsonStr.toString());
+
+        RefundResponse refundResponse = RefundResponse.builder()
+                .mRefundId(payload.get("m_refund_id").toString())
+                .refundId(result.get("refund_id").toString())
+                .subReturnCode((int) result.get("sub_return_code"))
+                .returnMessage(result.get("return_message").toString())
+                .returnCode((int) result.get("return_code"))
+                .subReturnMessage(result.get("sub_return_message").toString())
+                .zpTransId(request.getZpTransId())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.builder()
+                        .statusCode((Integer) result.get("sub_return_code"))
+                        .message(result.get("return_message").toString())
+                        .data(refundResponse)
+                        .build()
+        );
+    }
+
+    @Override
+    public ResponseEntity<?> getRefundStatus(String mRefundId) throws Exception{
+        long timestamp = System.currentTimeMillis();
+        String data = ZaloPayConfig.APP_ID + "|" + mRefundId + "|" + timestamp;
+        String mac = HMACUtil.HMacHexStringEncode(HMACUtil.HMACSHA256, ZaloPayConfig.KEY1, data);
+
+        Map<String, String> params = new HashMap<>();
+        params.put("app_id", ZaloPayConfig.APP_ID);
+        params.put("m_refund_id", mRefundId);
+        params.put("timestamp", String.valueOf(timestamp));
+        params.put("mac", mac);
+
+        String responseStr = sendRequest(ZaloPayConfig.GET_STATUS_REFUND_URL, params);
+
+        JSONObject result = new JSONObject(responseStr);
+        RefundStatusResponse response = new RefundStatusResponse();
+        response.setReturnCode(result.getInt("return_code"));
+        response.setReturnMessage(result.getString("return_message"));
+        response.setSubReturnCode(result.getInt("sub_return_code"));
+        response.setSubReturnMessage(result.getString("sub_return_message"));
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.builder()
+                        .statusCode(HttpStatus.OK.value())
+                        .message("Không xác định trạng thái đơn hàng")
+                        .data(response)
+                        .build()
+        );
+    }
+
 
     private Map<String, String> buildOrderParams(CreateOrderRequest request, String appTransId, long appTime) {
         Map<String, String> params = new HashMap<>();
@@ -236,5 +331,11 @@ public class ZaloPayServiceImpl implements ZaloPayService {
         String datePart = new SimpleDateFormat("yyMMdd").format(new Date());
         String randomPart = UUID.randomUUID().toString().substring(0, 8);
         return datePart + "_" + randomPart;
+    }
+    private static String getCurrentTimeString(String format) {
+        Calendar cal = new GregorianCalendar(TimeZone.getTimeZone("GMT+7"));
+        SimpleDateFormat fmt = new SimpleDateFormat(format);
+        fmt.setCalendar(cal);
+        return fmt.format(cal.getTimeInMillis());
     }
 }

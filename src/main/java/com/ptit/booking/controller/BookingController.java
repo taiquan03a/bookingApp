@@ -20,4 +20,9 @@ public class BookingController {
     public ResponseEntity<?> getBooking(@RequestBody BookingRoomRequest bookingRoomRequest, Principal principal) {
         return bookingService.booking(bookingRoomRequest, principal);
     }
+
+    @GetMapping("history_booking")
+    public ResponseEntity<?> getBookingHistory(Principal principal) {
+        return bookingService.historyBooking(principal);
+    }
 }

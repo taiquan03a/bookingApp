@@ -5,10 +5,13 @@ import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.booking.BookingDetail;
 import com.ptit.booking.dto.booking.BookingRoomRequest;
+import com.ptit.booking.dto.booking.HistoryBooking;
+import com.ptit.booking.dto.hotel.HotelHistoryResponse;
 import com.ptit.booking.dto.room.RoomBooked;
 import com.ptit.booking.dto.room.RoomRequest;
 import com.ptit.booking.dto.serviceRoom.ServiceBooked;
 import com.ptit.booking.dto.serviceRoom.ServiceRoomDto;
+import com.ptit.booking.enums.EnumBookingStatus;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
@@ -34,6 +37,7 @@ public class BookingServiceImpl implements BookingService {
     private final ServiceRepository serviceRepository;
     private final BookingRoomRepository bookingRoomRepository;
     private final HotelRepository hotelRepository;
+    private final BookingRepository bookingRepository;
 
     @Override
     public ResponseEntity<?> booking(BookingRoomRequest bookingRoomRequest, Principal principal) {
@@ -144,5 +148,69 @@ public class BookingServiceImpl implements BookingService {
                 .message(SuccessMessage.BOOKING_DETAIL_SUCCESSFULLY)
                 .data(bookingDetail)
                 .build());
+    }
+
+    @Override
+    public ResponseEntity<?> historyBooking(Principal principal) {
+        User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
+        if(user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
+                    .statusCode(HttpStatus.UNAUTHORIZED.value())
+                    .message(ErrorMessage.PLEASE_LOGIN)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        List<HistoryBooking> historyBookingList = new ArrayList<>();
+        for (EnumBookingStatus status : EnumBookingStatus.values()) {
+            if(!status.equals(EnumBookingStatus.PENDING)){
+                List<Booking> bookedList = bookingRepository.findAllByUserAndStatus(user,status.name());
+                List<HotelHistoryResponse> hotelBookedList = bookedList.stream().map(booking -> {
+                    Hotel hotel = booking.getHotel();
+                    return HotelHistoryResponse.builder()
+                            .bookingId(booking.getId())
+                            .hotelName(hotel.getName())
+                            .rating(hotel.getRating())
+                            .feedbackSum(hotel.getFeedbackSum())
+                            .bookingDate(booking.getCreatedAt())
+                            .bookingPrice(booking.getTotalPrice().toString())
+                            .image(hotel.getImages()
+                                    .stream()
+                                    .findFirst()
+                                    .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND))
+                                    .getUrl())
+                            .build();
+                }).toList();
+
+                HistoryBooking historyBooking = HistoryBooking.builder()
+                        .bookingStatus(status.name())
+                        .hotelBookingList(hotelBookedList)
+                        .build();
+                historyBookingList.add(historyBooking);
+            }
+        }
+        return ResponseEntity.ok(ApiResponse.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message(SuccessMessage.HISTORY_BOOKING_SUCCESSFULLY)
+                .data(historyBookingList)
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> cancelBooking(Long bookingId, Principal principal) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
+        if(!booking.getStatus().equals(EnumBookingStatus.BOOKED.name())){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ErrorResponse.builder()
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .message(ErrorMessage.HOTEL_NOT_BOOKED)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        Hotel hotel = booking.getHotel();
+
+
+        return null;
     }
 }

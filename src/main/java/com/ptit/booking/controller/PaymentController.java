@@ -3,8 +3,10 @@ package com.ptit.booking.controller;
 import com.ptit.booking.configuration.ZaloPayConfig;
 import com.ptit.booking.dto.booking.BookingRoomRequest;
 import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
+import com.ptit.booking.dto.zaloPay.RefundOrderRequest;
 import com.ptit.booking.service.PaymentService;
 import com.ptit.booking.service.ZaloPayService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.xml.bind.DatatypeConverter;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
@@ -36,6 +38,7 @@ public class PaymentController {
     }
 
     @PostMapping("create_order")
+    @Operation(summary = "API TEST",description = "Chi là api để back-end test ko sử dụng cho front-end")
     public ResponseEntity<?> createOrder(@RequestBody CreateOrderRequest createOrderRequest) {
         return zaloPayService.createOrder(createOrderRequest);
     }
@@ -45,7 +48,19 @@ public class PaymentController {
         return zaloPayService.getOrderStatus(appTransId);
     }
 
+    @PostMapping("refund")
+    @Operation(summary = "API TEST",description = "Chi là api để back-end test ko sử dụng cho front-end")
+    public ResponseEntity<?> refund(@RequestBody RefundOrderRequest request) throws Exception {
+        return zaloPayService.refundOrder(request);
+    }
+
+    @GetMapping("check_refund")
+    public ResponseEntity<?> checkRefund(@RequestParam String mRefundId) throws Exception {
+        return zaloPayService.getRefundStatus(mRefundId);
+    }
+
     @PostMapping("/callback")
+    @Operation(summary = "API TEST",description = "Chi là api để back-end test ko sử dụng cho front-end")
     public String callback(@RequestBody String jsonStr) throws NoSuchAlgorithmException, InvalidKeyException {
         System.out.println("<------------ Callback is called ------------->");
         JSONObject result = new JSONObject();
@@ -68,8 +83,8 @@ public class PaymentController {
                 // thanh toán thành công
                 // merchant cập nhật trạng thái cho đơn hàng
                 JSONObject data = new JSONObject(dataStr);
-                logger.info("update order's status = success where app_trans_id = " + data.getString("app_trans_id"));
-
+                logger.info("data: " + data.toString());
+//                logger.info("update order's status = success where app_trans_id = " + data.getString("app_trans_id"));
                 result.put("return_code", 1);
                 result.put("return_message", "success");
             }
