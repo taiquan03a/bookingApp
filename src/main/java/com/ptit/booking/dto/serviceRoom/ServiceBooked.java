@@ -1,6 +1,7 @@
 package com.ptit.booking.dto.serviceRoom;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.ptit.booking.model.ServiceEntity;
 import lombok.Builder;
 import lombok.Data;
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ServiceBooked {
     private Long serviceId;
     private String serviceName;

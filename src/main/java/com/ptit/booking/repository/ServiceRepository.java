@@ -1,5 +1,6 @@
 package com.ptit.booking.repository;
 
+import com.ptit.booking.model.BookingRoom;
 import com.ptit.booking.model.Room;
 import com.ptit.booking.model.ServiceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,5 +23,13 @@ public interface ServiceRepository extends JpaRepository<ServiceEntity, Long> {
         WHERE sr.room IN :rooms AND s.serviceType = :type
     """)
     List<ServiceEntity> findByRoomsAndType(@Param("rooms") List<Room> rooms, @Param("type") String type);
+
+    @Query("""
+        SELECT s
+        from BookingServiceEntity bs
+        left join BookingRoom br on bs.booking = :bookingRoom
+        left join ServiceEntity s on bs.service = s
+    """)
+    List<ServiceEntity> findByBookingRoom(@Param("bookingRoom") BookingRoom bookingRoom);
 
 }

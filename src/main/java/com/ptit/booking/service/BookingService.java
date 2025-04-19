@@ -10,4 +10,6 @@ public interface BookingService {
     ResponseEntity<?> booking(BookingRoomRequest bookingRoomRequest, Principal principal);
     ResponseEntity<?> historyBooking(Principal principal);
     ResponseEntity<?> cancelBooking(CancelBookingRequest cancelBookingRequest, Principal principal) throws Exception;
+    ResponseEntity<?> historyBookingDetail(Long bookingId, Principal principal);
+
 }

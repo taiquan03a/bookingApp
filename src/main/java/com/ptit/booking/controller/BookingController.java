@@ -31,4 +31,9 @@ public class BookingController {
     public ResponseEntity<?> cancelBooking(@RequestBody CancelBookingRequest cancelBookingRequest, Principal principal) throws Exception {
         return bookingService.cancelBooking(cancelBookingRequest,principal);
     }
+
+    @GetMapping("history_detail/{bookingId}")
+    public ResponseEntity<?> getBookingHistoryDetail(@PathVariable Long bookingId ,Principal principal) {
+        return bookingService.historyBookingDetail(bookingId,principal);
+    }
 }

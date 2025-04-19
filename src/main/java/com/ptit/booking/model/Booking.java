@@ -70,4 +70,7 @@ public class Booking {
     @OneToMany(mappedBy = "booking")
     private Set<Payment> payments = new LinkedHashSet<>();
 
+    @Column(name = "update_at")
+    private LocalDateTime updateAt;
+
 }

@@ -3,10 +3,7 @@ package com.ptit.booking.service.Impl;
 import com.ptit.booking.constants.ErrorMessage;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
-import com.ptit.booking.dto.booking.BookingDetail;
-import com.ptit.booking.dto.booking.BookingRoomRequest;
-import com.ptit.booking.dto.booking.CancelBookingRequest;
-import com.ptit.booking.dto.booking.HistoryBooking;
+import com.ptit.booking.dto.booking.*;
 import com.ptit.booking.dto.hotel.HotelHistoryResponse;
 import com.ptit.booking.dto.room.RoomBooked;
 import com.ptit.booking.dto.room.RoomRequest;
@@ -278,10 +275,11 @@ public class BookingServiceImpl implements BookingService {
 
         if(refundPrice.compareTo(BigDecimal.ZERO) == 0){
             paymentDeposit.setPaymentStatus(EnumBookingStatus.CANCELED.name());
+            paymentDeposit.setMessage(cancelBookingRequest.getReason());
             booking.setStatus(EnumBookingStatus.CANCELED.name());
             paymentRepository.save(paymentDeposit);
             bookingRepository.save(booking);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            return ResponseEntity.status(HttpStatus.OK).body(
                     ApiResponse.builder()
                             .statusCode(HttpStatus.OK.value())
                             .build()
@@ -294,6 +292,11 @@ public class BookingServiceImpl implements BookingService {
         refundOrderRequest.setDescription(cancelBookingRequest.getReason());
         RefundResponse refundResponse = zaloPayService.refundOrder(refundOrderRequest);
         if(refundResponse.getReturnCode() == 1){
+            paymentDeposit.setPaymentStatus(EnumBookingStatus.CANCELED.name());
+            paymentDeposit.setMessage(cancelBookingRequest.getReason());
+            booking.setStatus(EnumBookingStatus.CANCELED.name());
+            paymentRepository.save(paymentDeposit);
+            bookingRepository.save(booking);
             return ResponseEntity.ok(ApiResponse.builder()
                     .statusCode(HttpStatus.OK.value())
                     .message(SuccessMessage.REFUND_BOOKING_SUCCESSFULLY)
@@ -303,8 +306,92 @@ public class BookingServiceImpl implements BookingService {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
                 .statusCode(2010)
                 .message(ErrorMessage.REFUND_BOOKING_FAIL)
-                .description(EMAIL_IN_USE)
                 .timestamp(new Date(System.currentTimeMillis()))
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> historyBookingDetail(Long bookingId, Principal principal) {
+        User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
+        if(user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
+                    .statusCode(HttpStatus.UNAUTHORIZED.value())
+                    .message(ErrorMessage.PLEASE_LOGIN)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+        List<RoomBooked> roomBookedList = booking.getBookingRooms()
+                .stream()
+                .map(br-> {
+                    List<ServiceBooked> serviceBookedList = serviceRepository.findByBookingRoom(br)
+                            .stream()
+                            .map(serviceEntity -> {
+                                return ServiceBooked.builder()
+                                        .serviceName(serviceEntity.getName())
+                                        .serviceType(serviceEntity.getServiceType())
+                                        .build();
+                            }).toList();
+                    return RoomBooked.builder()
+                            .roomName(br.getRoom().getName())
+                            .roomId(br.getRoom().getId())
+                            .adults(br.getAdults())
+                            .priceService(br.getPriceService().floatValue())
+                            .priceRoom(br.getPriceRoom().floatValue())
+                            .serviceSelect(serviceBookedList)
+                            .build();
+                }).toList();
+        Set<Payment> payment = booking.getPayments();
+        HistoryBookingDetailResponse historyDetail = HistoryBookingDetailResponse.builder()
+                .bookingStatus(booking.getStatus())
+                .bookingStatusTime(booking.getUpdateAt())
+                .bookingId(bookingId)
+                .hotelName(booking.getHotel().getName())
+                .hotelAddress(booking.getHotel().getLocation().getName())
+                .totalAdults(booking.getBookingRooms().stream().mapToInt(BookingRoom::getAdults).sum())
+                .checkIn(booking.getCheckIn())
+                .checkOut(booking.getCheckOut())
+                .roomBookedList(roomBookedList)
+                .totalPriceRoom(booking.getBookingRooms().stream()
+                        .map(BookingRoom::getPriceRoom)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add).toString())
+                .priceCoupon(booking.getCouponPrice().toString())
+                .totalPriceService(booking.getTotalServicePrice().toString())
+                .finalPrice(booking.getTotalPrice().toString())
+                .reason(
+                        payment.stream()
+                                .filter(
+                                        pay -> pay.getPaymentType().equals(EnumPaymentType.DEPOSIT.name())
+                                )
+                                .findFirst()
+                                .orElseThrow(()-> new AppException(ErrorCode.PAYMENT_DEPOSIT_NOT_FOUND))
+                                .getMessage()
+
+                )
+                .paymentDeposit(
+                        payment.stream()
+                                .filter(
+                                        pay -> pay.getPaymentType().equals(EnumPaymentType.DEPOSIT.name())
+                                )
+                                .findFirst()
+                                .map(pay -> pay.getAmount().toString())
+                                .orElse(null)
+                )
+                .paymentRemaining(
+                        payment.stream()
+                                .filter(
+                                        pay -> pay.getPaymentType().equals(EnumPaymentType.REMAINING.name())
+                                )
+                                .findFirst()
+                                .map(pay -> pay.getAmount().toString())
+                                .orElse(null)
+                )
+                .build();
+        return ResponseEntity.ok(ApiResponse.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message(SuccessMessage.HISTORY_BOOKING_DETAIL_SUCCESSFULLY)
+                .data(historyDetail)
                 .build());
     }
 }

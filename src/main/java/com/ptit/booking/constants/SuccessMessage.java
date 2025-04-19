@@ -17,4 +17,5 @@ public class SuccessMessage {
     public static final String CREATE_ORDER_SUCCESSFULLY = "Create order successfully";
     public static final String HISTORY_BOOKING_SUCCESSFULLY = "History booking successfully";
     public static final String REFUND_BOOKING_SUCCESSFULLY = "Refund booking successfully";
+    public static final String HISTORY_BOOKING_DETAIL_SUCCESSFULLY = "History booking detail successfully";
 }
