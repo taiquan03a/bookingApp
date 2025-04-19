@@ -78,8 +78,8 @@ public class RoomServiceImpl implements RoomService {
                                         selectRoomRequest.getCheckOutDate()
                                 ),
                                 roomRepository.countAvailableRoom(
-                                        room,selectRoomRequest.getCheckInDate(),
-                                        selectRoomRequest.getCheckOutDate()
+                                        room,selectRoomRequest.getCheckInDate().atTime(hotel.getCheckInTime()),
+                                        selectRoomRequest.getCheckOutDate().atTime(hotel.getCheckOutTime())
                                 )
                         )
                 )

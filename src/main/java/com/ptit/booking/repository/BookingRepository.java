@@ -1,6 +1,7 @@
 package com.ptit.booking.repository;
 
 import com.ptit.booking.model.Booking;
+import com.ptit.booking.model.Hotel;
 import com.ptit.booking.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,4 +16,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "where b.user = :user " +
             "and b.status = :status")
     List<Booking> findAllByUserAndStatus(@Param("user") User user, @Param("status") String status);
+
+    List<Booking> findByHotelAndStatus(Hotel hotel,String status);
 }

@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -60,7 +61,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> , JpaSpecifica
             "WHERE r = :room " +
             "GROUP BY r.roomCount")
     int countAvailableRoom(@Param("room") Room room,
-                           @Param("checkin") LocalDate checkin,
-                           @Param("checkout") LocalDate checkout);
+                           @Param("checkin") LocalDateTime checkin,
+                           @Param("checkout") LocalDateTime checkout);
     boolean existsRoomByHotel(Hotel hotel);
 }

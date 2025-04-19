@@ -1,9 +1,7 @@
-package com.ptit.booking.dto.booking;
+package com.ptit.booking.dto.web;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.ptit.booking.dto.room.RoomBooked;
-import com.ptit.booking.model.Policy;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,8 +10,10 @@ import java.util.List;
 
 @Data
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class HistoryBookingDetailResponse {
+public class BookingDetailWebResponse {
+    private String customerName;
+    private String customerEmail;
+    private String customerPhone;
     private String bookingStatus;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
     private LocalDateTime bookingStatusTime;
@@ -34,5 +34,4 @@ public class HistoryBookingDetailResponse {
     private String paymentDeposit;
     private String paymentRemaining;
     private String reason;
-    private List<Policy> policyList;
 }

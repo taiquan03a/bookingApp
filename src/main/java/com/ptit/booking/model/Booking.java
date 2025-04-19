@@ -9,8 +9,10 @@ import org.hibernate.annotations.ColumnDefault;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -65,12 +67,24 @@ public class Booking {
     private BigDecimal totalServicePrice;
 
     @OneToMany(mappedBy = "booking")
-    private Set<BookingRoom> bookingRooms = new LinkedHashSet<>();
+    private List<BookingRoom> bookingRooms = new ArrayList<>();
 
     @OneToMany(mappedBy = "booking")
     private Set<Payment> payments = new LinkedHashSet<>();
 
     @Column(name = "update_at")
     private LocalDateTime updateAt;
+
+    @Size(max = 255)
+    @Column(name = "customer_name")
+    private String customerName;
+
+    @Size(max = 255)
+    @Column(name = "customer_phone")
+    private String customerPhone;
+
+    @Size(max = 255)
+    @Column(name = "customer_email")
+    private String customerEmail;
 
 }

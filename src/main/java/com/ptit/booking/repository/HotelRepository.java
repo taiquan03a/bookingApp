@@ -45,4 +45,5 @@ public interface HotelRepository extends JpaRepository<Hotel, Long> , JpaSpecifi
 
     @EntityGraph(attributePaths = {"location"})
     Optional<Hotel> findHotelById(Long id);
+
 }
