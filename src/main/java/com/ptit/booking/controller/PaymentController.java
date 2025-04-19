@@ -6,7 +6,9 @@ import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
 import com.ptit.booking.dto.zaloPay.RefundOrderRequest;
 import com.ptit.booking.dto.zaloPay.RefundResponse;
 import com.ptit.booking.enums.EnumBookingStatus;
+import com.ptit.booking.model.Booking;
 import com.ptit.booking.model.Payment;
+import com.ptit.booking.repository.BookingRepository;
 import com.ptit.booking.repository.PaymentRepository;
 import com.ptit.booking.service.PaymentService;
 import com.ptit.booking.service.ZaloPayService;
@@ -32,6 +34,7 @@ import java.util.logging.Logger;
 public class PaymentController {
     private final PaymentService paymentService;
     private final PaymentRepository paymentRepository;
+    private final BookingRepository bookingRepository;
 
     private Logger logger = Logger.getLogger(this.getClass().getName());
     private Mac HmacSHA256;
@@ -95,6 +98,9 @@ public class PaymentController {
                 payment.setZpTransId(zpTransId);
                 payment.setPaymentStatus(EnumBookingStatus.BOOKED.name());
                 paymentRepository.save(payment);
+                Booking booking = payment.getBooking();
+                booking.setStatus(EnumBookingStatus.BOOKED.name());
+                bookingRepository.save(booking);
                 result.put("return_code", 1);
                 result.put("return_message", "success");
             }

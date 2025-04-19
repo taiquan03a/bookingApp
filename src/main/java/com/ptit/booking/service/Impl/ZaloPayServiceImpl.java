@@ -8,6 +8,7 @@ import com.ptit.booking.enums.EnumBookingStatus;
 import com.ptit.booking.enums.EnumPaymentType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
+import com.ptit.booking.model.Booking;
 import com.ptit.booking.model.Payment;
 import com.ptit.booking.repository.BookingRepository;
 import com.ptit.booking.repository.PaymentRepository;
@@ -159,6 +160,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             long amount = result.getLong("amount");
             String zpTransId = result.optString("zp_trans_id");
             Payment payment = paymentRepository.findByAppTransId(appTransId);
+            Booking booking = payment.getBooking();
             payment.setZpTransId(zpTransId);
 
             OrderStatusResponse orderStatus = OrderStatusResponse.builder()
@@ -173,6 +175,8 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             switch (returnCode) {
                 case 1:
                     payment.setPaymentStatus(EnumBookingStatus.BOOKED.name());
+                    booking.setStatus(EnumBookingStatus.BOOKED.name());
+                    bookingRepository.save(booking);
                     paymentRepository.save(payment);
                     return ResponseEntity.ok(
                             ApiResponse.builder()
@@ -183,6 +187,8 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                     );
                 case 2:
                     payment.setPaymentStatus("FAIL");
+                    booking.setStatus(EnumBookingStatus.CANCELED.name());
+                    bookingRepository.save(booking);
                     paymentRepository.save(payment);
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                             ApiResponse.builder()
@@ -192,7 +198,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                                     .build()
                     );
                 case 3:
-                    payment.setPaymentStatus(EnumBookingStatus.PENDING.name());
+                    //payment.setPaymentStatus(EnumBookingStatus.PENDING.name());
                     paymentRepository.save(payment);
                     return ResponseEntity.status(HttpStatus.ACCEPTED).body(
                             ApiResponse.builder()
@@ -256,6 +262,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
         }
 
         JSONObject result = new JSONObject(resultJsonStr.toString());
+        log.info("resultJsonStr: {}", result);
         if((int) result.get("return_code") == 1 || (int) result.get("return_code") == 3){
             return RefundResponse.builder()
                     .mRefundId(payload.get("m_refund_id").toString())

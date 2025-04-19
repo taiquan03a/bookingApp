@@ -25,7 +25,10 @@ import com.ptit.booking.model.*;
 import com.ptit.booking.repository.*;
 import com.ptit.booking.service.BookingService;
 import com.ptit.booking.service.ZaloPayService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -43,6 +46,7 @@ import static com.ptit.booking.constants.ErrorMessage.EMAIL_IN_USE;
 @Service
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
+    private static final Logger log = LoggerFactory.getLogger(BookingServiceImpl.class);
     private final RoomRepository roomRepository;
     private final CouponRepository couponRepository;
     private final ServiceRepository serviceRepository;
@@ -209,6 +213,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<?> cancelBooking(CancelBookingRequest cancelBookingRequest, Principal principal) throws Exception {
         Booking booking = bookingRepository.findById(cancelBookingRequest.getBookingId())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
@@ -226,9 +231,26 @@ public class BookingServiceImpl implements BookingService {
 
         LocalDateTime checkInTime = booking.getCheckIn();
         LocalDateTime currentTime = LocalDateTime.now();
-        long hoursBetween = Math.abs(Duration.between(currentTime, checkInTime).toHours());
+        long hoursBetween = Duration.between(currentTime, checkInTime).toHours();
+        if(hoursBetween <= 0){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ErrorResponse.builder()
+                            .statusCode(HttpStatus.BAD_REQUEST.value())
+                            .message(ErrorMessage.CURRENT_TIME_MORE_THAN_CHECKIN)
+                            .timestamp(new Date(System.currentTimeMillis()))
+                            .build()
+            );
+        }
 
         BigDecimal refundPrice = BigDecimal.ZERO;
+
+        Payment paymentDeposit = paymentRepository.findByBooking(booking)
+                .stream()
+                .filter(payment -> payment.getPaymentType().equals(EnumPaymentType.DEPOSIT.name()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_DEPOSIT_NOT_FOUND));
+
+
 
         //hoursBetween sau 12h thi theo value , truoc 12h thi 100%
         if(policyCancel.getOperator().equals(EnumPolicyOperator.after.name())){
@@ -236,10 +258,10 @@ public class BookingServiceImpl implements BookingService {
             if(hoursBetween < Long.parseLong(policyCancel.getCondition())){
                 String numericPart = policyCancel.getValue().replace("%", "").trim();
                 BigDecimal refundPercent = new BigDecimal(numericPart).divide(BigDecimal.valueOf(100));
-                refundPrice = booking.getTotalPrice().multiply(refundPercent);
+                refundPrice = paymentDeposit.getAmount().multiply(refundPercent);
             }else{
                 // >= 12h
-                refundPrice = booking.getTotalPrice();
+                refundPrice = paymentDeposit.getAmount();
             }
         }
         //hoursBetween truoc 12h thi theo value , sau 12h thi 0%
@@ -248,18 +270,27 @@ public class BookingServiceImpl implements BookingService {
                 if(hoursBetween > Long.parseLong(policyCancel.getCondition())){
                     String numericPart = policyCancel.getValue().replace("%", "").trim();
                     BigDecimal refundPercent = new BigDecimal(numericPart).divide(BigDecimal.valueOf(100));
-                    refundPrice = booking.getTotalPrice().multiply(refundPercent);
+                    refundPrice = paymentDeposit.getAmount().multiply(refundPercent);
                 }
         }
-        Payment paymentDeposit = paymentRepository.findByBooking(booking)
-                .stream()
-                .filter(payment -> payment.getPaymentType().equals(EnumPaymentType.DEPOSIT.name()))
-                .findFirst()
-                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_DEPOSIT_NOT_FOUND));
+
+        log.info("refund price: " + refundPrice);
+
+        if(refundPrice.compareTo(BigDecimal.ZERO) == 0){
+            paymentDeposit.setPaymentStatus(EnumBookingStatus.CANCELED.name());
+            booking.setStatus(EnumBookingStatus.CANCELED.name());
+            paymentRepository.save(paymentDeposit);
+            bookingRepository.save(booking);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ApiResponse.builder()
+                            .statusCode(HttpStatus.OK.value())
+                            .build()
+            );
+        }
 
         RefundOrderRequest refundOrderRequest = new RefundOrderRequest();
         refundOrderRequest.setZpTransId(paymentDeposit.getZpTransId());
-        refundOrderRequest.setAmount(paymentDeposit.getAmount().longValue());
+        refundOrderRequest.setAmount(refundPrice.longValue());
         refundOrderRequest.setDescription(cancelBookingRequest.getReason());
         RefundResponse refundResponse = zaloPayService.refundOrder(refundOrderRequest);
         if(refundResponse.getReturnCode() == 1){
