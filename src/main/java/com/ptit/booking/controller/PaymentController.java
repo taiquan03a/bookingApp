@@ -5,6 +5,9 @@ import com.ptit.booking.dto.booking.BookingRoomRequest;
 import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
 import com.ptit.booking.dto.zaloPay.RefundOrderRequest;
 import com.ptit.booking.dto.zaloPay.RefundResponse;
+import com.ptit.booking.enums.EnumBookingStatus;
+import com.ptit.booking.model.Payment;
+import com.ptit.booking.repository.PaymentRepository;
 import com.ptit.booking.service.PaymentService;
 import com.ptit.booking.service.ZaloPayService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +31,7 @@ import java.util.logging.Logger;
 @RequestMapping("api/payment")
 public class PaymentController {
     private final PaymentService paymentService;
+    private final PaymentRepository paymentRepository;
 
     private Logger logger = Logger.getLogger(this.getClass().getName());
     private Mac HmacSHA256;
@@ -86,6 +90,11 @@ public class PaymentController {
                 JSONObject data = new JSONObject(dataStr);
                 logger.info("data: " + data.toString());
 //                logger.info("update order's status = success where app_trans_id = " + data.getString("app_trans_id"));
+                Payment payment = paymentRepository.findByAppTransId(data.getString("app_trans_id"));
+                String zpTransId = data.optString("zp_trans_id");
+                payment.setZpTransId(zpTransId);
+                payment.setPaymentStatus(EnumBookingStatus.BOOKED.name());
+                paymentRepository.save(payment);
                 result.put("return_code", 1);
                 result.put("return_message", "success");
             }

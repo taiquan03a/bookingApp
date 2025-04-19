@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByBooking(Booking booking);
+    Payment findByAppTransId(String appTransId);
 }

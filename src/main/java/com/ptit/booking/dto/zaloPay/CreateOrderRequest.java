@@ -7,6 +7,6 @@ import lombok.Data;
 @Data
 @Builder
 public class CreateOrderRequest {
-    private String orderId;
+    private Long orderId;
     private long amount;
 }

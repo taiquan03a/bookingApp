@@ -4,9 +4,12 @@ import com.ptit.booking.configuration.ZaloPayConfig;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.zaloPay.*;
+import com.ptit.booking.enums.EnumBookingStatus;
+import com.ptit.booking.enums.EnumPaymentType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.model.Payment;
+import com.ptit.booking.repository.BookingRepository;
 import com.ptit.booking.repository.PaymentRepository;
 import com.ptit.booking.service.ZaloPayService;
 import com.ptit.booking.util.HMACUtil;
@@ -28,6 +31,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,6 +41,7 @@ import java.util.stream.Collectors;
 public class ZaloPayServiceImpl implements ZaloPayService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final PaymentRepository paymentRepository;
+    private final BookingRepository bookingRepository;
     private HMACUtil hmacUtil;
 
     @Override
@@ -48,9 +53,13 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             // Lưu giao dịch vào database
             Payment transaction = new Payment();
             transaction.setAppTransId(appTransId);
-            transaction.setBooking(null);
+            transaction.setBooking(bookingRepository.findById(request.getOrderId())
+                    .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND)));
             transaction.setAmount(BigDecimal.valueOf(request.getAmount()));
             transaction.setPaymentStatus("PENDING");
+            transaction.setPaymentMethod("ZALOPAY");
+            transaction.setPaymentType(EnumPaymentType.DEPOSIT.name());
+            transaction.setCreatedAt(LocalDateTime.now());
             paymentRepository.save(transaction);
 
             Map<String, String> params = buildOrderParams(request, appTransId, appTime);
@@ -148,7 +157,9 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             String returnMessage = result.getString("return_message");
             boolean isProcessing = result.getBoolean("is_processing");
             long amount = result.getLong("amount");
-            String zpTransId = result.optString("zp_trans_id", "");
+            String zpTransId = result.optString("zp_trans_id");
+            Payment payment = paymentRepository.findByAppTransId(appTransId);
+            payment.setZpTransId(zpTransId);
 
             OrderStatusResponse orderStatus = OrderStatusResponse.builder()
                     .returnCode(returnCode)
@@ -161,6 +172,8 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             // Xử lý từng trạng thái
             switch (returnCode) {
                 case 1:
+                    payment.setPaymentStatus(EnumBookingStatus.BOOKED.name());
+                    paymentRepository.save(payment);
                     return ResponseEntity.ok(
                             ApiResponse.builder()
                                     .statusCode(HttpStatus.OK.value())
@@ -169,6 +182,8 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                                     .build()
                     );
                 case 2:
+                    payment.setPaymentStatus("FAIL");
+                    paymentRepository.save(payment);
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                             ApiResponse.builder()
                                     .statusCode(HttpStatus.BAD_REQUEST.value())
@@ -177,6 +192,8 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                                     .build()
                     );
                 case 3:
+                    payment.setPaymentStatus(EnumBookingStatus.PENDING.name());
+                    paymentRepository.save(payment);
                     return ResponseEntity.status(HttpStatus.ACCEPTED).body(
                             ApiResponse.builder()
                                     .statusCode(HttpStatus.ACCEPTED.value())

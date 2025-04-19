@@ -1,6 +1,7 @@
 package com.ptit.booking.controller;
 
 import com.ptit.booking.dto.booking.BookingRoomRequest;
+import com.ptit.booking.dto.booking.CancelBookingRequest;
 import com.ptit.booking.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -24,5 +25,10 @@ public class BookingController {
     @GetMapping("history_booking")
     public ResponseEntity<?> getBookingHistory(Principal principal) {
         return bookingService.historyBooking(principal);
+    }
+
+    @PostMapping("cancel")
+    public ResponseEntity<?> cancelBooking(@RequestBody CancelBookingRequest cancelBookingRequest, Principal principal) throws Exception {
+        return bookingService.cancelBooking(cancelBookingRequest,principal);
     }
 }

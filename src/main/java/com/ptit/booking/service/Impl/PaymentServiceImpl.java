@@ -159,7 +159,7 @@ public class PaymentServiceImpl implements PaymentService {
         bookingRoomRepository.saveAll(bookingRoomList);
 
         CreateOrderRequest createOrderRequest = CreateOrderRequest.builder()
-                .orderId(String.valueOf(booking.getId()))
+                .orderId(booking.getId())
                 .amount(booking.getTotalPrice().longValue())
                 .build();
         return zaloPayService.createOrder(createOrderRequest);
