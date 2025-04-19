@@ -52,4 +52,8 @@ public class Payment {
     @Column(name = "message")
     private String message;
 
+    @Size(max = 50)
+    @Column(name = "payment_type", length = 50)
+    private String paymentType;
+
 }

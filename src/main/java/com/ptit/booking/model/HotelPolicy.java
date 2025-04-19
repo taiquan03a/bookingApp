@@ -26,13 +26,4 @@ public class HotelPolicy {
     @JoinColumn(name = "policy_id", nullable = false)
     private Policy policy;
 
-    @Size(max = 255)
-    @NotNull
-    @Column(name = "description", nullable = false)
-    private String description;
-
-    @Size(max = 50)
-    @Column(name = "policy_key", length = 50)
-    private String policyKey;
-
 }

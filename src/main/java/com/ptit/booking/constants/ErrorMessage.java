@@ -22,4 +22,5 @@ public class ErrorMessage {
                 ".\n Vui lòng lựa chọn phòng phù hợp khác.";
     }
     public static final String HOTEL_NOT_BOOKED = "Bạn chưa đặt khách sạn này.";
+    public static final String REFUND_BOOKING_FAIL = "Hoàn tiền thất bại.";
 }

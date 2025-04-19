@@ -4,6 +4,7 @@ import com.ptit.booking.configuration.ZaloPayConfig;
 import com.ptit.booking.dto.booking.BookingRoomRequest;
 import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
 import com.ptit.booking.dto.zaloPay.RefundOrderRequest;
+import com.ptit.booking.dto.zaloPay.RefundResponse;
 import com.ptit.booking.service.PaymentService;
 import com.ptit.booking.service.ZaloPayService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,7 +51,7 @@ public class PaymentController {
 
     @PostMapping("refund")
     @Operation(summary = "API TEST",description = "Chi là api để back-end test ko sử dụng cho front-end")
-    public ResponseEntity<?> refund(@RequestBody RefundOrderRequest request) throws Exception {
+    public RefundResponse refund(@RequestBody RefundOrderRequest request) throws Exception {
         return zaloPayService.refundOrder(request);
     }
 

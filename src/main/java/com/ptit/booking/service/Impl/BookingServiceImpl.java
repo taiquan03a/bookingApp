@@ -5,19 +5,26 @@ import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.booking.BookingDetail;
 import com.ptit.booking.dto.booking.BookingRoomRequest;
+import com.ptit.booking.dto.booking.CancelBookingRequest;
 import com.ptit.booking.dto.booking.HistoryBooking;
 import com.ptit.booking.dto.hotel.HotelHistoryResponse;
 import com.ptit.booking.dto.room.RoomBooked;
 import com.ptit.booking.dto.room.RoomRequest;
 import com.ptit.booking.dto.serviceRoom.ServiceBooked;
 import com.ptit.booking.dto.serviceRoom.ServiceRoomDto;
+import com.ptit.booking.dto.zaloPay.RefundOrderRequest;
+import com.ptit.booking.dto.zaloPay.RefundResponse;
 import com.ptit.booking.enums.EnumBookingStatus;
+import com.ptit.booking.enums.EnumPaymentType;
+import com.ptit.booking.enums.EnumPolicyOperator;
+import com.ptit.booking.enums.EnumPolicyType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
 import com.ptit.booking.model.*;
 import com.ptit.booking.repository.*;
 import com.ptit.booking.service.BookingService;
+import com.ptit.booking.service.ZaloPayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +33,12 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+
+import static com.ptit.booking.constants.ErrorMessage.EMAIL_IN_USE;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +49,8 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRoomRepository bookingRoomRepository;
     private final HotelRepository hotelRepository;
     private final BookingRepository bookingRepository;
+    private final ZaloPayService zaloPayService;
+    private final PaymentRepository paymentRepository;
 
     @Override
     public ResponseEntity<?> booking(BookingRoomRequest bookingRoomRequest, Principal principal) {
@@ -196,8 +209,8 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public ResponseEntity<?> cancelBooking(Long bookingId, Principal principal) {
-        Booking booking = bookingRepository.findById(bookingId)
+    public ResponseEntity<?> cancelBooking(CancelBookingRequest cancelBookingRequest, Principal principal) throws Exception {
+        Booking booking = bookingRepository.findById(cancelBookingRequest.getBookingId())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
         if(!booking.getStatus().equals(EnumBookingStatus.BOOKED.name())){
@@ -209,8 +222,58 @@ public class BookingServiceImpl implements BookingService {
                     .build());
         }
         Hotel hotel = booking.getHotel();
+        Policy policyCancel = hotelRepository.findPoliciesByHotelAndType(hotel, EnumPolicyType.CANCEL.name());
 
+        LocalDateTime checkInTime = booking.getCheckIn();
+        LocalDateTime currentTime = LocalDateTime.now();
+        long hoursBetween = Math.abs(Duration.between(currentTime, checkInTime).toHours());
 
-        return null;
+        BigDecimal refundPrice = BigDecimal.ZERO;
+
+        //hoursBetween sau 12h thi theo value , truoc 12h thi 100%
+        if(policyCancel.getOperator().equals(EnumPolicyOperator.after.name())){
+            // sau 12h
+            if(hoursBetween < Long.parseLong(policyCancel.getCondition())){
+                String numericPart = policyCancel.getValue().replace("%", "").trim();
+                BigDecimal refundPercent = new BigDecimal(numericPart).divide(BigDecimal.valueOf(100));
+                refundPrice = booking.getTotalPrice().multiply(refundPercent);
+            }else{
+                // >= 12h
+                refundPrice = booking.getTotalPrice();
+            }
+        }
+        //hoursBetween truoc 12h thi theo value , sau 12h thi 0%
+        else if(policyCancel.getOperator().equals(EnumPolicyOperator.before.name())){
+                // >12h
+                if(hoursBetween > Long.parseLong(policyCancel.getCondition())){
+                    String numericPart = policyCancel.getValue().replace("%", "").trim();
+                    BigDecimal refundPercent = new BigDecimal(numericPart).divide(BigDecimal.valueOf(100));
+                    refundPrice = booking.getTotalPrice().multiply(refundPercent);
+                }
+        }
+        Payment paymentDeposit = paymentRepository.findByBooking(booking)
+                .stream()
+                .filter(payment -> payment.getPaymentType().equals(EnumPaymentType.DEPOSIT.name()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_DEPOSIT_NOT_FOUND));
+
+        RefundOrderRequest refundOrderRequest = new RefundOrderRequest();
+        refundOrderRequest.setZpTransId(paymentDeposit.getZpTransId());
+        refundOrderRequest.setAmount(paymentDeposit.getAmount().longValue());
+        refundOrderRequest.setDescription(cancelBookingRequest.getReason());
+        RefundResponse refundResponse = zaloPayService.refundOrder(refundOrderRequest);
+        if(refundResponse.getReturnCode() == 1){
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .statusCode(HttpStatus.OK.value())
+                    .message(SuccessMessage.REFUND_BOOKING_SUCCESSFULLY)
+                    .data(refundResponse)
+                    .build());
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
+                .statusCode(2010)
+                .message(ErrorMessage.REFUND_BOOKING_FAIL)
+                .description(EMAIL_IN_USE)
+                .timestamp(new Date(System.currentTimeMillis()))
+                .build());
     }
 }

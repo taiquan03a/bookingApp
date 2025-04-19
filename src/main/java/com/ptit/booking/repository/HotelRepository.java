@@ -34,6 +34,15 @@ public interface HotelRepository extends JpaRepository<Hotel, Long> , JpaSpecifi
     """)
     List<Policy> findPoliciesByHotel(@Param("hotel") Hotel hotel);
 
+    @Query("""
+        SELECT p FROM Hotel h
+        LEFT JOIN HotelPolicy hp ON hp.hotel = h
+        LEFT JOIN Policy p ON hp.policy = p
+        WHERE h = :hotel AND p.type = :type
+        ORDER BY p.condition desc limit 1
+    """)
+    Policy findPoliciesByHotelAndType(@Param("hotel") Hotel hotel,@Param("type") String type);
+
     @EntityGraph(attributePaths = {"location"})
     Optional<Hotel> findHotelById(Long id);
 }

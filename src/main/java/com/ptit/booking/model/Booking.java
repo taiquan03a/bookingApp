@@ -30,11 +30,11 @@ public class Booking {
 
     @NotNull
     @Column(name = "check_in", nullable = false)
-    private LocalDate checkIn;
+    private LocalDateTime checkIn;
 
     @NotNull
     @Column(name = "check_out", nullable = false)
-    private LocalDate checkOut;
+    private LocalDateTime checkOut;
 
     @Size(max = 50)
     @Column(name = "status", length = 50)

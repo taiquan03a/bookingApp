@@ -104,8 +104,8 @@ public class RoomServiceImpl implements RoomService {
         for(HotelPolicy hotelPolicy:room.getHotel().getHotelPolicies()){
             PolicyRoom policyRoom = PolicyRoom.builder()
                     .policyId(hotelPolicy.getPolicy().getId())
-                    .policyDescription(hotelPolicy.getDescription())
-                    .policyName(hotelPolicy.getPolicy().getName())
+                    .policyDescription(hotelPolicy.getPolicy().getDescription())
+                    .policyName(hotelPolicy.getPolicy().getType())
                     .build();
             policyRoomList.add(policyRoom);
         }

@@ -35,4 +35,16 @@ public class Policy {
     @JsonIgnore
     private Set<HotelPolicy> hotelPolicies = new LinkedHashSet<>();
 
+    @Size(max = 10)
+    @Column(name = "`condition`", length = 10)
+    private String condition;
+
+    @Size(max = 50)
+    @Column(name = "value", length = 50)
+    private String value;
+
+    @Size(max = 50)
+    @Column(name = "operator", length = 50)
+    private String operator;
+
 }

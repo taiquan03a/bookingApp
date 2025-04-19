@@ -200,7 +200,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
     }
 
     @Override
-    public ResponseEntity<?> refundOrder(RefundOrderRequest request) throws Exception{
+    public RefundResponse refundOrder(RefundOrderRequest request) throws Exception{
         long timestamp = System.currentTimeMillis();
         Random rand = new Random();
         String uid = timestamp + "" + (111 + rand.nextInt(888)); // unique id
@@ -239,8 +239,19 @@ public class ZaloPayServiceImpl implements ZaloPayService {
         }
 
         JSONObject result = new JSONObject(resultJsonStr.toString());
-
-        RefundResponse refundResponse = RefundResponse.builder()
+        if((int) result.get("return_code") == 1 || (int) result.get("return_code") == 3){
+            return RefundResponse.builder()
+                    .mRefundId(payload.get("m_refund_id").toString())
+                    .refundId(result.get("refund_id").toString())
+                    .subReturnCode((int) result.get("sub_return_code"))
+                    .returnMessage("Hoàn tiền giao dịch thành công")
+                    .returnCode(1)
+                    .subReturnMessage("Hoàn tiền giao dịch thành công")
+                    .zpTransId(request.getZpTransId())
+                    .refundAmount(request.getAmount())
+                    .build();
+        }
+        return RefundResponse.builder()
                 .mRefundId(payload.get("m_refund_id").toString())
                 .refundId(result.get("refund_id").toString())
                 .subReturnCode((int) result.get("sub_return_code"))
@@ -248,15 +259,8 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                 .returnCode((int) result.get("return_code"))
                 .subReturnMessage(result.get("sub_return_message").toString())
                 .zpTransId(request.getZpTransId())
+                .refundAmount(request.getAmount())
                 .build();
-
-        return ResponseEntity.status(HttpStatus.OK).body(
-                ApiResponse.builder()
-                        .statusCode((Integer) result.get("sub_return_code"))
-                        .message(result.get("return_message").toString())
-                        .data(refundResponse)
-                        .build()
-        );
     }
 
     @Override
