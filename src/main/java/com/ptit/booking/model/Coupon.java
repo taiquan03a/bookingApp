@@ -59,4 +59,8 @@ public class Coupon {
     @Column(name = "description")
     private String description;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rank_id")
+    private Rank rank;
+
 }

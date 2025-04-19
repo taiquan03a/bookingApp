@@ -1,5 +1,6 @@
 package com.ptit.booking.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -7,7 +8,9 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -42,5 +45,9 @@ public class Rank {
 
     @OneToMany(mappedBy = "rank")
     private Set<User> users = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "rank")
+    @JsonIgnore
+    private List<Coupon> coupons = new ArrayList<>();
 
 }

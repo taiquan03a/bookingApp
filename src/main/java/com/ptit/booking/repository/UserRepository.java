@@ -1,5 +1,6 @@
 package com.ptit.booking.repository;
 
+import com.ptit.booking.model.Booking;
 import com.ptit.booking.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -33,5 +34,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("select count(u) from User u join u.roles r where r.role != 'ROLE_USER'")
     int countUser();
 
-
+    @Query("""
+        select b
+        from Booking b
+        where b.user = :user and b.status = 'CHECKOUT'
+    """)
+    List<Booking> findBookingByUser(@Param("user") User user);
 }

@@ -28,4 +28,9 @@ public class CouponController {
     public ResponseEntity<?> getRanking(){
         return  couponService.getRankingInfo();
     }
+
+    @GetMapping("member")
+    public ResponseEntity<?> getMember(Principal principal){
+        return couponService.currentRanking(principal);
+    }
 }
