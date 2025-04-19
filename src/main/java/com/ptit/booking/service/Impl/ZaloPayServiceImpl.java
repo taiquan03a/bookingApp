@@ -14,6 +14,7 @@ import com.ptit.booking.repository.BookingRepository;
 import com.ptit.booking.repository.PaymentRepository;
 import com.ptit.booking.service.ZaloPayService;
 import com.ptit.booking.util.HMACUtil;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.NameValuePair;
@@ -46,6 +47,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
     private HMACUtil hmacUtil;
 
     @Override
+    @Transactional
     public ResponseEntity<ApiResponse<CreateOrderResponse>> createOrder(CreateOrderRequest request) {
         try {
             String appTransId = generateAppTransId();
@@ -338,7 +340,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
         }else {
             embedData.put("redirecturl", "http://localhost:3000/payment-result");
         }
-//        params.put("embed_data", embedData.toString());
+        params.put("embed_data", embedData.toString());
 
         params.put("item", "[]");
         params.put("description", "Payment for order #" + request.getOrderId());

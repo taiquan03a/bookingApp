@@ -136,35 +136,42 @@ public class HotelServiceImpl implements HotelService {
                     .rooms(filterRequest.getRoomNumber())
                     .build();
 
-            ListOperations<String, String> listOps = redisTemplate.opsForList();
-            String key = "searchHistory:" + user.getId();
-            String searchJson = objectMapper.writeValueAsString(search);
+            try {
+                ListOperations<String, String> listOps = redisTemplate.opsForList();
+                String key = "searchHistory:" + user.getId();
+                String searchJson = objectMapper.writeValueAsString(search);
 
-            // Lấy toàn bộ lịch sử tìm kiếm hiện có
-            List<String> searchList = listOps.range(key, 0, -1);
+                // Lấy toàn bộ lịch sử tìm kiếm hiện có
+                List<String> searchList = listOps.range(key, 0, -1);
 
-            // Xóa lịch sử cũ của cùng một địa điểm (nếu có)
-            if (searchList != null) {
-                for (String json : searchList) {
-                    try {
-                        SearchHistory oldSearch = objectMapper.readValue(json, SearchHistory.class);
-                        if (oldSearch.getLocation().equals(search.getLocation())) {
-                            listOps.remove(key, 1, json); // Xóa mục cũ
-                            break; // Dừng lại ngay khi tìm thấy mục cần xóa
+                // Xóa lịch sử cũ của cùng một địa điểm (nếu có)
+                if (searchList != null) {
+                    for (String json : searchList) {
+                        try {
+                            SearchHistory oldSearch = objectMapper.readValue(json, SearchHistory.class);
+                            if (oldSearch.getLocation().equals(search.getLocation())) {
+                                listOps.remove(key, 1, json); // Xóa mục cũ
+                                break;
+                            }
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace(); // Có thể ghi log lỗi JSON nếu cần
                         }
-                    } catch (JsonProcessingException e) {
-                        e.printStackTrace();
                     }
                 }
+
+                // Lưu lịch sử mới vào đầu danh sách
+                listOps.leftPush(key, searchJson);
+                System.out.println("Pushed to Redis key " + key + ": " + searchJson);
+
+                // Giữ tối đa MAX_HISTORY mục
+                listOps.trim(key, 0, MAX_HISTORY - 1);
+
+            } catch (Exception redisException) {
+                // Ghi log lỗi Redis nhưng không throw để tránh ảnh hưởng luồng chính
+                System.err.println("Không thể ghi lịch sử tìm kiếm vào Redis: " + redisException.getMessage());
+                // Nếu bạn dùng logging framework:
+                // logger.warn("Redis error while saving search history", redisException);
             }
-
-            // Lưu lịch sử mới vào đầu danh sách
-            listOps.leftPush(key, searchJson);
-            System.out.println("Pushed to Redis key " + key + ": " + searchJson);
-
-            // Giữ tối đa MAX_HISTORY mục
-            listOps.trim(key, 0, MAX_HISTORY - 1);
-
         }
         Page<Hotel> hotels = hotelRepository.findAll(HotelSpecification.filterHotels(filterRequest,sortBy,sort), pageable);
         Page<HotelRequest> hotelRequestPage = hotels.map(hotel -> new HotelRequest(
