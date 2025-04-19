@@ -5,6 +5,7 @@ import com.ptit.booking.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -59,4 +60,6 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
     """)
     List<Coupon> findByUser(@Param("user") User user);
 
+    @Query("select c from Coupon c where c.rank.rankLevel = :level")
+    List<Coupon> findByRankEvent(@Param("level") int level);
 }

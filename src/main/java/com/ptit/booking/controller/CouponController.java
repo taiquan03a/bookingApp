@@ -39,4 +39,8 @@ public class CouponController {
     public ResponseEntity<?> getMyCoupon(Principal principal){
         return couponService.myCoupon(principal);
     }
+    @GetMapping("event")
+    public ResponseEntity<?> getEvent(){
+        return couponService.couponEvent();
+    }
 }

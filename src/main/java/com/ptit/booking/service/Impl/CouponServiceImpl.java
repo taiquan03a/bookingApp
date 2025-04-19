@@ -235,4 +235,16 @@ public class CouponServiceImpl implements CouponService {
                 .data(coupon)
                 .build());
     }
+
+    @Override
+    public ResponseEntity<?> couponEvent() {
+        List<CouponDto> couponList = couponMapper.toDtoList(
+                couponRepository.findByRankEvent(0)
+        );
+        return ResponseEntity.ok(ApiResponse.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message(SuccessMessage.LIST_COUPON_EVENTS_SUCCESSFULLY)
+                .data(couponList)
+                .build());
+    }
 }

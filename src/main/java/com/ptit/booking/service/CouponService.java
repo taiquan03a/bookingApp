@@ -11,5 +11,6 @@ public interface CouponService {
     ResponseEntity<?> currentRanking(Principal principal);
     ResponseEntity<?> myCoupon(Principal principal);
     ResponseEntity<?> saveCoupon(Principal principal, Long voucherId);
+    ResponseEntity<?> couponEvent();
     //ResponseEntity<?> filterByCode(String code);
 }
