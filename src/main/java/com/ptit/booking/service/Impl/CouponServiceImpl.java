@@ -4,6 +4,7 @@ import com.ptit.booking.constants.ErrorMessage;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.coupon.CouponDto;
+import com.ptit.booking.dto.coupon.MyCouponResponse;
 import com.ptit.booking.dto.coupon.OverViewRanking;
 import com.ptit.booking.dto.coupon.RankResponse;
 import com.ptit.booking.enums.EnumBookingStatus;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -148,7 +150,7 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     public ResponseEntity<?> myCoupon(Principal principal) {
-        var user = (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
+        User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
         if(user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
                     .statusCode(HttpStatus.UNAUTHORIZED.value())
@@ -157,8 +159,44 @@ public class CouponServiceImpl implements CouponService {
                     .build());
         }
         List<Coupon> couponList = couponRepository.findByUser(user);
+        List<Coupon> couponCanUse = new ArrayList<>();
+        List<Coupon> couponNotUse = new ArrayList<>();
+        List<Coupon> couponUsed = new ArrayList<>();
+        for(Coupon coupon : couponList) {
+            UserCoupon userCoupon = userCouponRepository.findByUserAndCoupon(user, coupon);
+            if(userCoupon.getUse()){
+                couponUsed.add(coupon);
+            }else if(coupon.getExpiryDate().isAfter(LocalDateTime.now())){
+                couponNotUse.add(coupon);
+            }else {
+                couponCanUse.add(coupon);
+            }
+        }
 
-        return null;
+        List<MyCouponResponse> myCouponResponseList = new ArrayList<>();
+        myCouponResponseList.add(
+                MyCouponResponse.builder()
+                        .couponStatus("CAN_USE")
+                        .couponList(couponMapper.toDtoList(couponCanUse))
+                .build()
+        );
+        myCouponResponseList.add(
+                MyCouponResponse.builder()
+                        .couponStatus("USED")
+                        .couponList(couponMapper.toDtoList(couponUsed))
+                        .build()
+        );
+        myCouponResponseList.add(
+                MyCouponResponse.builder()
+                        .couponStatus("EXPIRY_DATE")
+                        .couponList(couponMapper.toDtoList(couponNotUse))
+                        .build()
+        );
+        return ResponseEntity.ok(ApiResponse.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message(SuccessMessage.MY_COUPON_SUCCESSFULLY)
+                .data(myCouponResponseList)
+                .build());
     }
 
     @Override

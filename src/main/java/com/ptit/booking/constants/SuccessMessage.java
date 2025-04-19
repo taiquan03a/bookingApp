@@ -20,4 +20,5 @@ public class SuccessMessage {
     public static final String HISTORY_BOOKING_DETAIL_SUCCESSFULLY = "History booking detail successfully";
     public static final String LIST_RANKING_SUCCESSFULLY = "List ranking successfully";
     public static final String SAVE_COUPON_SUCCESSFULLY = "Save coupon successfully";
+    public static final String MY_COUPON_SUCCESSFULLY = "My coupon successfully";
 }
