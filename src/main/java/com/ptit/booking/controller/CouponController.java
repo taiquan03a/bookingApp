@@ -4,10 +4,7 @@ import com.ptit.booking.service.CouponService;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 
@@ -32,5 +29,10 @@ public class CouponController {
     @GetMapping("member")
     public ResponseEntity<?> getMember(Principal principal){
         return couponService.currentRanking(principal);
+    }
+
+    @GetMapping("user_save/{couponId}")
+    public ResponseEntity<?> saveUser(Principal principal, @PathVariable long couponId){
+        return couponService.saveCoupon(principal,couponId);
     }
 }

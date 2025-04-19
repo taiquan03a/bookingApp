@@ -7,16 +7,17 @@ import com.ptit.booking.dto.coupon.CouponDto;
 import com.ptit.booking.dto.coupon.OverViewRanking;
 import com.ptit.booking.dto.coupon.RankResponse;
 import com.ptit.booking.enums.EnumBookingStatus;
+import com.ptit.booking.exception.AppException;
+import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
 import com.ptit.booking.mapping.CouponMapper;
-import com.ptit.booking.model.Booking;
-import com.ptit.booking.model.Coupon;
-import com.ptit.booking.model.Rank;
-import com.ptit.booking.model.User;
+import com.ptit.booking.model.*;
 import com.ptit.booking.repository.CouponRepository;
 import com.ptit.booking.repository.RankRepository;
+import com.ptit.booking.repository.UserCouponRepository;
 import com.ptit.booking.repository.UserRepository;
 import com.ptit.booking.service.CouponService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,7 @@ public class CouponServiceImpl implements CouponService {
     private final CouponMapper couponMapper;
     private final RankRepository rankRepository;
     private final UserRepository userRepository;
+    private final UserCouponRepository userCouponRepository;
 
     @Override
     public ResponseEntity<?> getCouponByUser(Principal principal, String couponCode, float totalPrice) {
@@ -148,7 +150,39 @@ public class CouponServiceImpl implements CouponService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<?> saveCoupon(Principal principal, Long voucherId) {
-        return null;
+        var user = (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
+        if(user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
+                    .statusCode(HttpStatus.UNAUTHORIZED.value())
+                    .message(ErrorMessage.PLEASE_LOGIN)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        Coupon coupon = couponRepository.findById(voucherId)
+                .orElseThrow(() -> new AppException(ErrorCode.COUPON_NOT_FOUND));
+        if(user.getRank().getId() != coupon.getRank().getId()) {
+            return ResponseEntity.badRequest().body(
+                    ErrorResponse.builder()
+                            .statusCode(450)
+                            .message(ErrorMessage.COUPON_NOT_IN_RANK)
+                            .timestamp(new Date(System.currentTimeMillis()))
+                            .build()
+            );
+        }
+        userCouponRepository.save(
+                UserCoupon.builder()
+                        .user(user)
+                        .coupon(coupon)
+                        .use(false)
+                        .assignedDate(LocalDateTime.now())
+                        .build()
+        );
+        return ResponseEntity.ok(ApiResponse.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message(SuccessMessage.SAVE_COUPON_SUCCESSFULLY)
+                .data(coupon)
+                .build());
     }
 }

@@ -19,4 +19,5 @@ public class SuccessMessage {
     public static final String REFUND_BOOKING_SUCCESSFULLY = "Refund booking successfully";
     public static final String HISTORY_BOOKING_DETAIL_SUCCESSFULLY = "History booking detail successfully";
     public static final String LIST_RANKING_SUCCESSFULLY = "List ranking successfully";
+    public static final String SAVE_COUPON_SUCCESSFULLY = "Save coupon successfully";
 }
