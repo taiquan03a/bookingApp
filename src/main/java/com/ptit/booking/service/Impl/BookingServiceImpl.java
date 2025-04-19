@@ -52,6 +52,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final ZaloPayService zaloPayService;
     private final PaymentRepository paymentRepository;
+    private final PolicyRepository policyRepository;
 
     @Override
     public ResponseEntity<?> booking(BookingRoomRequest bookingRoomRequest, Principal principal) {
@@ -386,6 +387,9 @@ public class BookingServiceImpl implements BookingService {
                                 .findFirst()
                                 .map(pay -> pay.getAmount().toString())
                                 .orElse(null)
+                )
+                .policyList(
+                        policyRepository.findCancelByHotel(booking.getHotel())
                 )
                 .build();
         return ResponseEntity.ok(ApiResponse.builder()

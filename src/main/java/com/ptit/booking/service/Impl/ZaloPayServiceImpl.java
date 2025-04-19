@@ -59,7 +59,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             transaction.setAmount(BigDecimal.valueOf(request.getAmount()));
             transaction.setPaymentStatus("PENDING");
             transaction.setPaymentMethod("ZALOPAY");
-            transaction.setPaymentType(EnumPaymentType.DEPOSIT.name());
+            transaction.setPaymentType(request.getPaymentType());
             transaction.setCreatedAt(LocalDateTime.now());
             paymentRepository.save(transaction);
 
@@ -175,7 +175,11 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             switch (returnCode) {
                 case 1:
                     payment.setPaymentStatus(EnumBookingStatus.BOOKED.name());
-                    booking.setStatus(EnumBookingStatus.BOOKED.name());
+                    if(payment.getPaymentType().equals(EnumPaymentType.DEPOSIT.name())){
+                        booking.setStatus(EnumBookingStatus.BOOKED.name());
+                    }else{
+                        booking.setStatus(EnumBookingStatus.CHECKIN.name());
+                    }
                     bookingRepository.save(booking);
                     paymentRepository.save(payment);
                     return ResponseEntity.ok(
@@ -221,6 +225,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             throw new AppException(ErrorCode.ZALOPAY_ORDER_NOT_FOUND);
         }
     }
+
 
     @Override
     public RefundResponse refundOrder(RefundOrderRequest request) throws Exception{
@@ -328,8 +333,12 @@ public class ZaloPayServiceImpl implements ZaloPayService {
 
         // Thêm embed_data với return_url để redirect sau khi thanh toán
         JSONObject embedData = new JSONObject();
-        embedData.put("redirecturl", "myapp://payment-result");
-        params.put("embed_data", embedData.toString());
+        if(request.getPaymentType().equals(EnumPaymentType.DEPOSIT.name())){
+            embedData.put("redirecturl", "myapp://payment-result");
+        }else {
+            embedData.put("redirecturl", "http://localhost:3000/payment-result");
+        }
+//        params.put("embed_data", embedData.toString());
 
         params.put("item", "[]");
         params.put("description", "Payment for order #" + request.getOrderId());

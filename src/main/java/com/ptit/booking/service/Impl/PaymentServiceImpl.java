@@ -7,6 +7,7 @@ import com.ptit.booking.dto.room.RoomRequest;
 import com.ptit.booking.dto.serviceRoom.ServiceRoomDto;
 import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
 import com.ptit.booking.enums.EnumBookingStatus;
+import com.ptit.booking.enums.EnumPaymentType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
@@ -161,6 +162,7 @@ public class PaymentServiceImpl implements PaymentService {
         CreateOrderRequest createOrderRequest = CreateOrderRequest.builder()
                 .orderId(booking.getId())
                 .amount(booking.getTotalPrice().longValue())
+                .paymentType(EnumPaymentType.DEPOSIT.name())
                 .build();
         return zaloPayService.createOrder(createOrderRequest);
     }

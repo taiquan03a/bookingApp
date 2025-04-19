@@ -25,4 +25,5 @@ public class ErrorMessage {
     public static final String REFUND_BOOKING_FAIL = "Hoàn tiền thất bại.";
     public static final String CURRENT_TIME_MORE_THAN_CHECKIN = "Yêu cầu hủy thất bại. Thời gian hiện tại sau hoặc bằng thời gian check in.";
     public static final String BOOKING_IS_CANCELED = "Bạn đã hủy đơn đặt này rồi.";
+    public static final String CHECKIN_FAILED = "Check-in failed. Chưa đến thời gian check in.";
 }

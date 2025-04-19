@@ -30,4 +30,8 @@ public class WebController {
     public ResponseEntity<?> bookingDetail(@PathVariable Long bookingId) {
         return webService.getBookingDetail(bookingId);
     }
+    @GetMapping("checkin/{bookingId}")
+    public ResponseEntity<?> checkIn(@PathVariable Long bookingId) {
+        return webService.checkInStatus(bookingId);
+    }
 }

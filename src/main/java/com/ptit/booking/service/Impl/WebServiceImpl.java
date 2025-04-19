@@ -1,5 +1,6 @@
 package com.ptit.booking.service.Impl;
 
+import com.ptit.booking.constants.ErrorMessage;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.booking.HistoryBookingDetailResponse;
@@ -14,6 +15,7 @@ import com.ptit.booking.enums.EnumBookingStatus;
 import com.ptit.booking.enums.EnumPaymentType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
+import com.ptit.booking.exception.ErrorResponse;
 import com.ptit.booking.model.*;
 import com.ptit.booking.repository.BookingRepository;
 import com.ptit.booking.repository.BookingServiceEntityRepository;
@@ -29,11 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.ptit.booking.constants.ErrorMessage.EMAIL_IN_USE;
 
 @Service
 @RequiredArgsConstructor
@@ -107,7 +108,8 @@ public class WebServiceImpl implements WebService {
                     List<ServiceBooked> serviceBookedList = serviceRepository.findByBookingRoom(br)
                             .stream()
                             .map(serviceEntity -> {
-                                BookingServiceEntity bookingService = bookingServiceEntityRepository.findByBookingAndServiceEntity(br, serviceEntity);
+                                BookingServiceEntity bookingService = bookingServiceEntityRepository
+                                        .findByBookingAndServiceEntity(br, serviceEntity);
                                 if (bookingService != null) {
                                     return ServiceBooked.builder()
                                             .serviceName(serviceEntity.getName())
@@ -194,7 +196,11 @@ public class WebServiceImpl implements WebService {
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
         if(LocalDateTime.now().isBefore(booking.getCheckIn())){
-            return null;
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
+                    .statusCode(409)
+                    .message(ErrorMessage.CHECKIN_FAILED)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
         }
         booking.setStatus(EnumBookingStatus.CHECKIN.name());
         Payment payment = booking.getPayments().stream()
@@ -211,6 +217,7 @@ public class WebServiceImpl implements WebService {
                 CreateOrderRequest.builder()
                         .orderId(bookingId)
                         .amount(remainingPrice.longValue())
+                        .paymentType(EnumPaymentType.REMAINING.name())
                         .build()
         );
     }

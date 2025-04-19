@@ -11,6 +11,7 @@ public interface ZaloPayService {
     ResponseEntity<?> createOrder(CreateOrderRequest request);
     Map<String, Object> handleCallback(String jsonStr);
     ResponseEntity<?> getOrderStatus(String appTransId);
+//    ResponseEntity<?> getOrderStatusCheckIn(String appTransId);
     RefundResponse refundOrder(RefundOrderRequest request) throws Exception;
     ResponseEntity<?> getRefundStatus(String appTransId) throws Exception;
 }

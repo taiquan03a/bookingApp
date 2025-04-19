@@ -9,4 +9,5 @@ import lombok.Data;
 public class CreateOrderRequest {
     private Long orderId;
     private long amount;
+    private String paymentType;
 }
