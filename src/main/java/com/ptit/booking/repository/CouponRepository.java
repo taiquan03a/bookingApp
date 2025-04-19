@@ -12,8 +12,6 @@ import java.util.List;
 
 @Repository
 public interface CouponRepository extends JpaRepository<Coupon, Long> {
-    @Query("SELECT Coupon from UserCoupon uc where uc.user = :user")
-    List<Coupon> findByUser(@Param("user") User user);
 
     @Query("""
         SELECT c FROM Coupon c
@@ -53,6 +51,12 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
     @Query("select c from Coupon c where c.code = :code")
     Coupon findByCouponCode(@Param("code") String code);
 
-
+    @Query("""
+        select c
+        from UserCoupon uc
+        join Coupon c on uc.coupon = c
+        where uc.user = :user
+    """)
+    List<Coupon> findByUser(@Param("user") User user);
 
 }

@@ -35,4 +35,8 @@ public class CouponController {
     public ResponseEntity<?> saveUser(Principal principal, @PathVariable long couponId){
         return couponService.saveCoupon(principal,couponId);
     }
+    @GetMapping("my_coupon")
+    public ResponseEntity<?> getMyCoupon(Principal principal){
+        return couponService.myCoupon(principal);
+    }
 }

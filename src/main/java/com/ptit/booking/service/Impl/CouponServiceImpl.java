@@ -73,6 +73,7 @@ public class CouponServiceImpl implements CouponService {
     public ResponseEntity<?> getRankingInfo() {
         List<Rank> rankList = rankRepository.findAll();
         List<RankResponse> rankResponseList = rankList.stream()
+                .filter(rank -> rank.getRankLevel() != 0)
                 .sorted(Comparator.comparing(Rank::getRankLevel))
                 .map(rank -> {
                     return RankResponse.builder()
@@ -116,7 +117,8 @@ public class CouponServiceImpl implements CouponService {
         Rank currentRank = ranks.stream()
                 .filter(rank ->
                         totalSpent.compareTo(rank.getMinTotalSpent()) >= 0 &&
-                                totalBooking >= rank.getMinTotalBooking()
+                                totalBooking >= rank.getMinTotalBooking() &&
+                                rank.getRankLevel() != 0
                 )
                 .max(Comparator.comparing(Rank::getMinTotalSpent)) // lấy rank cao nhất mà user đạt
                 .orElse(null);
@@ -146,6 +148,16 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     public ResponseEntity<?> myCoupon(Principal principal) {
+        var user = (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
+        if(user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
+                    .statusCode(HttpStatus.UNAUTHORIZED.value())
+                    .message(ErrorMessage.PLEASE_LOGIN)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        List<Coupon> couponList = couponRepository.findByUser(user);
+
         return null;
     }
 
