@@ -64,6 +64,10 @@ public class User implements UserDetails {
     @Column(name = "avatar")
     private String avatar;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rank_id")
+    private Rank rank;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();

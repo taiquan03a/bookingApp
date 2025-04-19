@@ -24,4 +24,8 @@ public class CouponController {
         return couponService.getCouponByUser(principal,code,totalPrice);
     }
 
+    @GetMapping("rank")
+    public ResponseEntity<?> getRanking(){
+        return  couponService.getRankingInfo();
+    }
 }

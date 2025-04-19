@@ -1,12 +1,10 @@
-package com.ptit.booking;
+package com.ptit.booking.model;
 
 import com.ptit.booking.enums.EnumDeviceType;
-import com.ptit.booking.model.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity

@@ -1,6 +1,6 @@
 package com.ptit.booking.service.Impl;
 
-import com.ptit.booking.UserDevice;
+import com.ptit.booking.model.UserDevice;
 import com.ptit.booking.enums.EnumNotificationStatus;
 import com.ptit.booking.enums.EnumNotificationType;
 import com.ptit.booking.exception.AppException;

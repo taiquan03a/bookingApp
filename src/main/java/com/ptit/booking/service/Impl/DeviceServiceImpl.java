@@ -1,9 +1,7 @@
 package com.ptit.booking.service.Impl;
 
-import com.ptit.booking.UserDevice;
+import com.ptit.booking.model.UserDevice;
 import com.ptit.booking.dto.notification.DeviceRegistrationRequest;
-import com.ptit.booking.exception.AppException;
-import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.model.User;
 import com.ptit.booking.repository.UserDeviceRepository;
 import com.ptit.booking.repository.UserRepository;
