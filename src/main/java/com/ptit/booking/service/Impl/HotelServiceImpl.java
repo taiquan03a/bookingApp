@@ -238,6 +238,7 @@ public class HotelServiceImpl implements HotelService {
         int ratingService = 0;
         for(Review review : reviewList) {
             Comment comment = Comment.builder()
+                    .reviewId(review.getId())
                     .username(review.getUser().getUsername())
                     .urlAvatar(review.getUser().getAvatar())
                     .comment(review.getComment())
