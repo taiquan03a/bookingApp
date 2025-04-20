@@ -140,7 +140,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         long selectDay = ChronoUnit.DAYS.between(bookingRoomRequest.getCheckInDate(), bookingRoomRequest.getCheckOutDate());
-        totalPriceRoom = totalPriceRoom.multiply(BigDecimal.valueOf(selectDay));
+        //totalPriceRoom = totalPriceRoom.multiply(BigDecimal.valueOf(selectDay));
         BigDecimal couponPrice = BigDecimal.ZERO;
         if(bookingRoomRequest.getCouponId() != 0){
              couponPrice = couponRepository.calculateDiscountAmount(

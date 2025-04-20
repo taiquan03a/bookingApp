@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -115,18 +116,18 @@ public class RoomServiceImpl implements RoomService {
                 .filter(promotion -> LocalDateTime.now().isAfter(promotion.getStartDate()))
                 .filter(promotion -> LocalDateTime.now().isBefore(promotion.getEndDate()))
                 .toList();
-        float originalPrice = room.getPrice().floatValue();
-        float promotionPrice = promotionList.stream()
+        BigDecimal originalPrice = room.getPrice();
+        BigDecimal promotionPrice = promotionList.stream()
                 .map(promotion -> {
                    if(promotion.getDiscountType().equals(EnumPromotionType.PERCENTAGE.name())){
-                       float discountPercentage = Float.parseFloat(promotion.getDiscountValue().replace("%", ""));
-                       return originalPrice * (discountPercentage / 100.0f);
+                       BigDecimal discountPercentage = new BigDecimal(promotion.getDiscountValue().replace("%", ""));
+                       return originalPrice.multiply(discountPercentage).divide(BigDecimal.valueOf(100));
                    }else{
-                        return Float.parseFloat(promotion.getDiscountValue());
+                       return new BigDecimal(promotion.getDiscountValue());
                    }
                 })
-                .reduce(0.0f, Float::sum);
-        float finalPrice = (originalPrice - promotionPrice) * selectDay;
+                .reduce(BigDecimal.ZERO,BigDecimal::add);
+        BigDecimal finalPrice = (originalPrice.subtract(promotionPrice)).multiply(BigDecimal.valueOf(selectDay));
         PromotionBookingRoom promotionBookingRoom = PromotionBookingRoom.builder()
                 .id(promotionList.stream().findFirst().get().getId())
                 .discountValue(promotionList.stream().findFirst().get().getDiscountValue())
@@ -139,7 +140,7 @@ public class RoomServiceImpl implements RoomService {
                 .bed(room.getBed())
                 .serviceEntityList(serviceEntitySet)
                 .selectDay(selectDay)
-                .promotionPrice(originalPrice * selectDay)
+                .promotionPrice(originalPrice.multiply(BigDecimal.valueOf(selectDay)))
                 .price(finalPrice)
                 .promotion(promotionBookingRoom)
                 .roomQuantity(availableRoom)

@@ -69,8 +69,8 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(()-> new AppException(ErrorCode.HOTEL_NOT_FOUND));
         List<RoomBooked> roomBookedList = new ArrayList<>();
         List<Policy> policyByHotelList = hotelRepository.findPoliciesByHotel(hotel);
-        float totalPriceRoom = 0;
-        float totalPriceService = 0;
+        BigDecimal totalPriceRoom = BigDecimal.ZERO;
+        BigDecimal totalPriceService = BigDecimal.ZERO;
         int totalAdults = 0;
         for(RoomRequest roomRequest: bookingRoomRequest.getRoomRequestList()){
             Room roomSelect = roomRepository.findById(roomRequest.getRoomId())
@@ -86,11 +86,11 @@ public class BookingServiceImpl implements BookingService {
                         );
 
             List<ServiceBooked> serviceBookedList = new ArrayList<>();
-            float priceService = 0;
+            BigDecimal priceService = BigDecimal.ZERO;
             for(ServiceRoomDto service: roomRequest.getServiceList()){
                 ServiceEntity serviceEntity = serviceRepository.findById(service.getId())
                         .orElseThrow(()->new AppException(ErrorCode.SERVICE_NOT_FOUND));
-                float priceServiceCurrentRoom = serviceEntity.getPrice().floatValue() * service.getQuantity().floatValue();
+                BigDecimal priceServiceCurrentRoom = serviceEntity.getPrice().multiply(BigDecimal.valueOf(service.getQuantity()));
                 serviceBookedList.add(ServiceBooked.builder()
                                 .serviceId(serviceEntity.getId())
                                 .serviceType(serviceEntity.getServiceType())
@@ -103,7 +103,7 @@ public class BookingServiceImpl implements BookingService {
                                 .note(service.getNote())
                                 .priceBooked(String.valueOf(priceServiceCurrentRoom))
                         .build());
-                priceService += priceServiceCurrentRoom;
+                priceService = priceService.add(priceServiceCurrentRoom);
             }
 
             RoomBooked roomBooked = RoomBooked.builder()
@@ -112,35 +112,35 @@ public class BookingServiceImpl implements BookingService {
                     .adults(roomRequest.getAdults())
                     .serviceSelect(serviceBookedList)
                     .policyBooked(policyByHotelList)
-                    .priceRoom(roomRequest.getPrice())
+                    .priceRoom(BigDecimal.valueOf(roomRequest.getPrice()))
                     .priceService(priceService)
                     .build();
-            totalPriceRoom += roomBooked.getPriceRoom();
-            totalPriceService += priceService;
+            totalPriceRoom = totalPriceRoom.add(roomBooked.getPriceRoom());
+            totalPriceService = totalPriceService.add(priceService);
             totalAdults += roomBooked.getAdults();
             roomBookedList.add(roomBooked);
         }
         long selectDay = ChronoUnit.DAYS.between(bookingRoomRequest.getCheckInDate(), bookingRoomRequest.getCheckOutDate());
-        float totalPrice = selectDay * (totalPriceRoom + totalPriceService);
-        float priceCoupon = 0;
+        BigDecimal totalPrice = totalPriceRoom.add(totalPriceService);
+        BigDecimal priceCoupon = BigDecimal.ZERO;
         Coupon coupon = new Coupon();
         if(bookingRoomRequest.getCouponId() == 0){
             List<Coupon> couponList = couponRepository
                     .findBestCouponByUser(
                             "",
                             user,
-                            BigDecimal.valueOf(totalPrice)
+                            totalPrice
                     );
             if(!couponList.isEmpty()){
                 coupon = couponList.get(0);
                 priceCoupon = couponRepository.calculateDiscountAmount(
-                        coupon,BigDecimal.valueOf(totalPrice)).floatValue();
+                        coupon,totalPrice);
             }
         }else{
             coupon = couponRepository.findById(bookingRoomRequest.getCouponId())
                     .orElseThrow(()-> new AppException(ErrorCode.COUPON_NOT_FOUND));
             priceCoupon = couponRepository.calculateDiscountAmount(
-                    coupon,BigDecimal.valueOf(totalPrice)).floatValue();
+                    coupon,totalPrice);
         }
 
 
@@ -156,7 +156,7 @@ public class BookingServiceImpl implements BookingService {
                 .priceCoupon(String.valueOf(priceCoupon))
                 .totalPriceRoom(String.valueOf(totalPriceRoom))
                 .totalPriceService(String.valueOf(totalPriceService))
-                .finalPrice(String.valueOf(totalPrice - priceCoupon))
+                .finalPrice(String.valueOf(totalPrice.subtract(priceCoupon)))
                 .build();
         return ResponseEntity.ok(ApiResponse.builder()
                 .statusCode(HttpStatus.OK.value())
@@ -338,8 +338,8 @@ public class BookingServiceImpl implements BookingService {
                             .roomName(br.getRoom().getName())
                             .roomId(br.getRoom().getId())
                             .adults(br.getAdults())
-                            .priceService(br.getPriceService().floatValue())
-                            .priceRoom(br.getPriceRoom().floatValue())
+                            .priceService(br.getPriceService())
+                            .priceRoom(br.getPriceRoom())
                             .serviceSelect(serviceBookedList)
                             .build();
                 }).toList();

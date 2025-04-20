@@ -128,8 +128,8 @@ public class WebServiceImpl implements WebService {
                             .roomName(br.getRoom().getName())
                             .roomId(br.getRoom().getId())
                             .adults(br.getAdults())
-                            .priceService(br.getPriceService().floatValue())
-                            .priceRoom(br.getPriceRoom().floatValue())
+                            .priceService(br.getPriceService())
+                            .priceRoom(br.getPriceRoom())
                             .serviceSelect(serviceBookedList)
                             .build();
                 }).toList();

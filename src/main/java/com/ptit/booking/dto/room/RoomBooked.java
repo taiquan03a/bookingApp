@@ -6,6 +6,8 @@ import com.ptit.booking.model.Policy;
 import com.ptit.booking.model.ServiceEntity;
 import lombok.Builder;
 import lombok.Data;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -15,8 +17,8 @@ public class RoomBooked {
     private Long roomId;
     private String roomName;
     private int adults;
-    private float priceRoom;
-    private float priceService;
+    private BigDecimal priceRoom;
+    private BigDecimal priceService;
     private List<ServiceBooked> serviceSelect;
     private List<Policy> policyBooked;
 }

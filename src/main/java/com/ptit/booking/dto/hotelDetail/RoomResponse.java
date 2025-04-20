@@ -7,6 +7,7 @@ import com.ptit.booking.model.ServiceEntity;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.Set;
 
 @Data
@@ -18,8 +19,8 @@ public class RoomResponse {
     private String bed;
     private Set<ServiceEntity> serviceEntityList;
     private int selectDay;
-    private float price;
-    private float promotionPrice;
+    private BigDecimal price;
+    private BigDecimal promotionPrice;
     private PromotionBookingRoom promotion;
     private int roomQuantity;
     private Set<PolicyRoom> policyRoomList;
