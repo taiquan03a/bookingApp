@@ -1,6 +1,7 @@
 package com.ptit.booking.controller;
 
 import com.ptit.booking.configuration.ZaloPayConfig;
+import com.ptit.booking.dto.PaymentBookingRequest;
 import com.ptit.booking.dto.booking.BookingRoomRequest;
 import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
 import com.ptit.booking.dto.zaloPay.RefundOrderRequest;
@@ -41,7 +42,7 @@ public class PaymentController {
     private final ZaloPayService zaloPayService;
 
     @PostMapping("checkout")
-    public ResponseEntity<?> createPayment(@RequestBody BookingRoomRequest bookingRoomRequest, Principal principal) {
+    public ResponseEntity<?> createPayment(@RequestBody PaymentBookingRequest bookingRoomRequest, Principal principal) {
         return paymentService.checkout(bookingRoomRequest,principal);
     }
 
