@@ -27,4 +27,7 @@ public class ErrorMessage {
     public static final String BOOKING_IS_CANCELED = "Bạn đã hủy đơn đặt này rồi.";
     public static final String CHECKIN_FAILED = "Check-in failed. Chưa đến thời gian check in.";
     public static final String COUPON_NOT_IN_RANK = "Mã khuyến mãi này không thuộc hạng thành viên của bạn.";
+    public static final String BOOKING_NOT_CHECKOUT = "Vui lòng checkout phòng trước khi đánh giá.";
+    public static final String BOOKING_IS_NOT_HOTEL = "Khách sạn bạn đặt khác với khách sạn bạn đánh giá.";
+    public static final String MAXIMUM_5_IMAGE = "Chỉ được tối đa 5 ảnh.";
 }

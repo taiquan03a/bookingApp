@@ -22,4 +22,5 @@ public class SuccessMessage {
     public static final String SAVE_COUPON_SUCCESSFULLY = "Save coupon successfully";
     public static final String MY_COUPON_SUCCESSFULLY = "My coupon successfully";
     public static final String LIST_COUPON_EVENTS_SUCCESSFULLY = "List coupon events successfully";
+    public static final String SEND_REVIEW_SUCCESSFULLY = "Send review successfully";
 }

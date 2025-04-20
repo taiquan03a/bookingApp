@@ -2,17 +2,20 @@ package com.ptit.booking.service.Impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ptit.booking.constants.ErrorMessage;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.feedback.Comment;
 import com.ptit.booking.dto.hotel.*;
 import com.ptit.booking.dto.hotelDetail.*;
 import com.ptit.booking.dto.hotelDetail.ReviewDto;
+import com.ptit.booking.enums.EnumBookingStatus;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
 import com.ptit.booking.model.*;
 import com.ptit.booking.repository.*;
+import com.ptit.booking.service.CloudinaryService;
 import com.ptit.booking.service.HotelService;
 import com.ptit.booking.specification.HotelSpecification;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +30,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
@@ -51,6 +57,9 @@ public class HotelServiceImpl implements HotelService {
     private final LocationRepository locationRepository;
     private static final int MAX_HISTORY = 10;
     private final ReviewRepository reviewRepository;
+    private final BookingRepository bookingRepository;
+    private final CloudinaryService cloudinaryService;
+    private final ImageRepository imageRepository;
     private String apiKey = "fsq3VsauLSw5an6aSmbScZFmlw1nco2b+9ozuSaKfVJzdK4=";
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -311,8 +320,87 @@ public class HotelServiceImpl implements HotelService {
                 .build());
     }
 
+    @Override
+    @Transactional
+    public ResponseEntity<?> review(Principal principal, UserReviewRequest request) throws IOException {
+        //Kiem tra dang nhap
+        User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
+        if(user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
+                    .statusCode(HttpStatus.UNAUTHORIZED.value())
+                    .message(ErrorMessage.PLEASE_LOGIN)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        Hotel hotel = hotelRepository.findById(request.getHotelId())
+                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+        Booking booking = bookingRepository.findById(request.getBookingId())
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
-    public List<Activity> searchPlaces(String location) {
+        //Kiem tra co dat phong hay khong
+        if(!booking.getHotel().getId().equals(hotel.getId())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
+                    .statusCode(2020)
+                    .message(ErrorMessage.BOOKING_IS_NOT_HOTEL)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        //Kiem tra da checkout chua
+        if(!booking.getStatus().equals(EnumBookingStatus.CHECKOUT.name())){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .message(ErrorMessage.BOOKING_NOT_CHECKOUT)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        //So luong anh co qua 5 hay khong
+        if(request.getImage().size() > 5){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
+                    .statusCode(405)
+                    .message(MAXIMUM_5_IMAGE)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        List<String> urlImageList = cloudinaryService.uploadImages(request.getImage(), "review");
+        Review review = Review.builder()
+                .user(user)
+                .hotel(hotel)
+                .ratingHotel(request.getHotelPoint())
+                .ratingRoom(request.getRoomPoint())
+                .ratingService(request.getServicePoint())
+                .ratingLocation(request.getLocationPoint())
+                .comment(request.getComment())
+                .build();
+        reviewRepository.save(review);
+        List<Image> images = urlImageList.stream().map(url -> {
+            return Image.builder()
+                    .url(url)
+                    .type("REVIEW")
+                    .reviewId(review.getId())
+                    .build();
+        }).toList();
+        imageRepository.saveAll(images);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message(SuccessMessage.SEND_REVIEW_SUCCESSFULLY)
+                .data(reviewMap(review))
+                .build());
+    }
+    private ReviewHotelResponse reviewMap(Review review){
+        List<String> urlImages = reviewRepository.findImageReview(review.getId());
+        return ReviewHotelResponse.builder()
+                .reviewId(review.getId())
+                .hotelPoint(review.getRatingHotel())
+                .servicePoint(review.getRatingService())
+                .roomPoint(review.getRatingRoom())
+                .locationPoint(review.getRatingLocation())
+                .comment(review.getComment())
+                .image(urlImages)
+                .build();
+    }
+
+
+    private List<Activity> searchPlaces(String location) {
         // 1. Get coordinates from OpenStreetMap
         String geocodeUrl = "https://nominatim.openstreetmap.org/search";
         UriComponentsBuilder geoBuilder = UriComponentsBuilder.fromHttpUrl(geocodeUrl)

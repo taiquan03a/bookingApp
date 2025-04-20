@@ -2,6 +2,7 @@ package com.ptit.booking.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ptit.booking.dto.hotel.FilterRequest;
+import com.ptit.booking.dto.hotel.UserReviewRequest;
 import com.ptit.booking.dto.hotelDetail.SelectRoomRequest;
 import com.ptit.booking.service.HotelService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.time.LocalDate;
 
@@ -48,5 +50,9 @@ public class HotelController {
             checkOutDate = checkInDate.plusDays(1);
         }
         return hotelService.hotelDetail(id,checkInDate,checkOutDate);
+    }
+    @PostMapping("send_review")
+    public ResponseEntity<?> sendReview(@ModelAttribute UserReviewRequest userReviewRequest,Principal principal) throws IOException {
+        return hotelService.review(principal, userReviewRequest);
     }
 }

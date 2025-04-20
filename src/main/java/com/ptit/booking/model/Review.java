@@ -1,15 +1,16 @@
 package com.ptit.booking.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
 @Entity
+@Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "reviews")
 public class Review {
     @Id

@@ -2,12 +2,13 @@ package com.ptit.booking.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-@Getter
-@Setter
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
+@Builder
 @Table(name = "image")
 public class Image {
     @Id
@@ -26,5 +27,8 @@ public class Image {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id")
     private Hotel hotel;
+
+    @Column(name = "review_id")
+    private Long reviewId;
 
 }
