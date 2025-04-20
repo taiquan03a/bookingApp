@@ -25,8 +25,4 @@ public class Amenity {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "amenity")
-    @JsonIgnore
-    private Set<HotelAmenity> hotelAmenities = new LinkedHashSet<>();
-
 }

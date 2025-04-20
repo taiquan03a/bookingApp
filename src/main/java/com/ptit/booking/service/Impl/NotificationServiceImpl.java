@@ -85,6 +85,7 @@ public class NotificationServiceImpl implements NotificationService {
         CompletableFuture.completedFuture(null);
     }
 
+
     private void sendPushNotification(UserDevice device, String title, String message, Long notificationId) {
         try {
             HttpClient client = HttpClient.newHttpClient();

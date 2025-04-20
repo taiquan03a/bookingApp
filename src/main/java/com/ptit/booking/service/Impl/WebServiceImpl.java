@@ -207,23 +207,35 @@ public class WebServiceImpl implements WebService {
                 .filter(pay -> pay.getPaymentType().equals(EnumPaymentType.DEPOSIT.name()))
                 .findFirst()
                 .orElseThrow(()->new AppException(ErrorCode.PAYMENT_DEPOSIT_NOT_FOUND));
-        if(payment.getAmount().compareTo(booking.getTotalServicePrice()) == 0){
-            bookingRepository.save(booking);
-            return null;
-        }
-        BigDecimal remainingPrice = booking.getTotalPrice().subtract(payment.getAmount());
+//        if(payment.getAmount().compareTo(booking.getTotalServicePrice()) == 0){
+//            bookingRepository.save(booking);
+//            return null;
+//        }
 
-        return zaloPayService.createOrder(
-                CreateOrderRequest.builder()
-                        .orderId(bookingId)
-                        .amount(remainingPrice.longValue())
-                        .paymentType(EnumPaymentType.REMAINING.name())
-                        .build()
-        );
+//        Payment remaniningPayment = Payment.
+//        BigDecimal remainingPrice = booking.getTotalPrice().subtract(payment.getAmount());
+//
+//        return zaloPayService.createOrder(
+//                CreateOrderRequest.builder()
+//                        .orderId(bookingId)
+//                        .amount(remainingPrice.longValue())
+//                        .paymentType(EnumPaymentType.REMAINING.name())
+//                        .build()
+            return null;
+
     }
 
     @Override
     public ResponseEntity<?> checkOutStatus(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+        if(!booking.getStatus().equals(EnumBookingStatus.CHECKOUT.name())){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
+                    .statusCode(409)
+                    .message(ErrorMessage.CHECKIN_FAILED)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
         return null;
     }
 
