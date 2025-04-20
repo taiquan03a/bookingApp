@@ -24,4 +24,5 @@ public class SuccessMessage {
     public static final String LIST_COUPON_EVENTS_SUCCESSFULLY = "List coupon events successfully";
     public static final String SEND_REVIEW_SUCCESSFULLY = "Send review successfully";
     public static final String REVIEW_DETAIL_SUCCESSFULLY = "Review detail successfully";
+    public static final String CHECKIN_SUCCESSFULLY = "Checkin successfully";
 }

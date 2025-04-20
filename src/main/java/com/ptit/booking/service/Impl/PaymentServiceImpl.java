@@ -2,6 +2,7 @@ package com.ptit.booking.service.Impl;
 
 import com.ptit.booking.constants.ErrorMessage;
 import com.ptit.booking.dto.ApiResponse;
+import com.ptit.booking.dto.PaymentBookingRequest;
 import com.ptit.booking.dto.booking.BookingRoomRequest;
 import com.ptit.booking.dto.room.RoomRequest;
 import com.ptit.booking.dto.serviceRoom.ServiceRoomDto;
@@ -51,7 +52,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional()
-    public ResponseEntity<?> checkout(BookingRoomRequest bookingRoomRequest, Principal principal) {
+    public ResponseEntity<?> checkout(PaymentBookingRequest bookingRoomRequest, Principal principal) {
         User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
         if(user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
@@ -76,6 +77,9 @@ public class PaymentServiceImpl implements PaymentService {
                 .promotionPrice(BigDecimal.ZERO)
                 .couponPrice(BigDecimal.ZERO)
                 .totalServicePrice(BigDecimal.ZERO)
+                .customerEmail(bookingRoomRequest.getCustomerEmail())
+                .customerName(bookingRoomRequest.getCustomerName())
+                .customerPhone(bookingRoomRequest.getCustomerPhone())
                 .build();
         bookingRepository.save(booking);
 
