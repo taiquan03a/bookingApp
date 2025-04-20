@@ -35,6 +35,7 @@ public enum ErrorCode {
     NOTIFICATION_FAILED(2007, "Notification failed", HttpStatus.BAD_REQUEST),
     BOOKING_NOT_FOUND(2008, "Booking not found", HttpStatus.NOT_FOUND),
     PAYMENT_DEPOSIT_NOT_FOUND(2009, "Payment deposit not found", HttpStatus.NOT_FOUND),
+    REVIEW_NOT_FOUND(20010, "Review not found", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

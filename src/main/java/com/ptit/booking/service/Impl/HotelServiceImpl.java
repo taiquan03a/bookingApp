@@ -386,6 +386,18 @@ public class HotelServiceImpl implements HotelService {
                 .data(reviewMap(review))
                 .build());
     }
+
+    @Override
+    public ResponseEntity<?> reviewDetail(Long reviewId) {
+        ReviewHotelResponse response = reviewMap(reviewRepository.findById(reviewId)
+                .orElseThrow(()-> new AppException(ErrorCode.REVIEW_NOT_FOUND)));
+        return ResponseEntity.ok(ApiResponse.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message(SuccessMessage.REVIEW_DETAIL_SUCCESSFULLY)
+                .data(response)
+                .build());
+    }
+
     private ReviewHotelResponse reviewMap(Review review){
         List<String> urlImages = reviewRepository.findImageReview(review.getId());
         return ReviewHotelResponse.builder()

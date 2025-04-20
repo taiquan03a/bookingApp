@@ -17,4 +17,5 @@ public interface HotelService {
     ResponseEntity<?> search(String sortBy, String sort, int page, FilterRequest filterRequest, Principal principal) throws JsonProcessingException;
     ResponseEntity<?> hotelDetail(Long hotelId, LocalDate checkInDate, LocalDate checkOutDate);
     ResponseEntity<?> review(Principal principal, UserReviewRequest userReviewRequest) throws IOException;
+    ResponseEntity<?> reviewDetail(Long reviewId);
 }

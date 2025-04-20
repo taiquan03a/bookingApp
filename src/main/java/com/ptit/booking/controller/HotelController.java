@@ -18,6 +18,7 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 @RequestMapping("api/hotel")
 public class HotelController {
+
     private final HotelService hotelService;
 
     @GetMapping("/home")
@@ -25,6 +26,8 @@ public class HotelController {
     public ResponseEntity<?> home(Principal principal) {
         return hotelService.home(principal);
     }
+
+
     @PostMapping("/filter")
     @Operation(summary = "search hotel",description = "api tìm kiếm khách sạn.")
     public ResponseEntity<?> filter(
@@ -36,6 +39,7 @@ public class HotelController {
             ) throws JsonProcessingException {
         return hotelService.search(sortBy,sort,page,filterRequest,principal);
     }
+
     @GetMapping("/hotel_detail/{id}")
     @Operation(summary = "hotel detail",description = "api hiển thị thông tin chi tiết của khách sạn.")
     public ResponseEntity<?> hotelDetail(
@@ -51,8 +55,14 @@ public class HotelController {
         }
         return hotelService.hotelDetail(id,checkInDate,checkOutDate);
     }
+
     @PostMapping("send_review")
     public ResponseEntity<?> sendReview(@ModelAttribute UserReviewRequest userReviewRequest,Principal principal) throws IOException {
         return hotelService.review(principal, userReviewRequest);
+    }
+
+    @GetMapping("review/{reviewId}")
+    public ResponseEntity<?> review(@PathVariable Long reviewId){
+        return hotelService.reviewDetail(reviewId);
     }
 }
