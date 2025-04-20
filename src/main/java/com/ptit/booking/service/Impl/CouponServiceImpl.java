@@ -212,7 +212,7 @@ public class CouponServiceImpl implements CouponService {
         }
         Coupon coupon = couponRepository.findById(voucherId)
                 .orElseThrow(() -> new AppException(ErrorCode.COUPON_NOT_FOUND));
-        if(user.getRank().getId() != coupon.getRank().getId()) {
+        if(!user.getRank().getId().equals(coupon.getRank().getId()) && coupon.getRank().getRankLevel() != 0) {
             return ResponseEntity.badRequest().body(
                     ErrorResponse.builder()
                             .statusCode(450)
