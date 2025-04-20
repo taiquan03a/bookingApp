@@ -166,7 +166,7 @@ public class CouponServiceImpl implements CouponService {
             UserCoupon userCoupon = userCouponRepository.findByUserAndCoupon(user, coupon);
             if(userCoupon.getUse()){
                 couponUsed.add(coupon);
-            }else if(coupon.getExpiryDate().isAfter(LocalDateTime.now())){
+            }else if(coupon.getExpiryDate().isBefore(LocalDateTime.now())){
                 couponNotUse.add(coupon);
             }else {
                 couponCanUse.add(coupon);
@@ -212,6 +212,14 @@ public class CouponServiceImpl implements CouponService {
         }
         Coupon coupon = couponRepository.findById(voucherId)
                 .orElseThrow(() -> new AppException(ErrorCode.COUPON_NOT_FOUND));
+        UserCoupon userCoupon = userCouponRepository.findByUserAndCoupon(user, coupon);
+        if(userCoupon != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
+                    .statusCode(410)
+                    .message(ErrorMessage.USER_SAVED_COUPON)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
         if(!user.getRank().getId().equals(coupon.getRank().getId()) && coupon.getRank().getRankLevel() != 0) {
             return ResponseEntity.badRequest().body(
                     ErrorResponse.builder()

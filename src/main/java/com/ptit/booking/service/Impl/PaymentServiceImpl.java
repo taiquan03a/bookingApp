@@ -8,6 +8,8 @@ import com.ptit.booking.dto.serviceRoom.ServiceRoomDto;
 import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
 import com.ptit.booking.enums.EnumBookingStatus;
 import com.ptit.booking.enums.EnumPaymentType;
+import com.ptit.booking.enums.EnumPolicyOperator;
+import com.ptit.booking.enums.EnumPolicyType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
@@ -159,9 +161,18 @@ public class PaymentServiceImpl implements PaymentService {
         }
         bookingRoomRepository.saveAll(bookingRoomList);
 
+        BigDecimal paymentPrice = booking.getTotalPrice();
+        Policy policyPayment = hotelRepository.findPoliciesByHotelAndType(hotel, EnumPolicyType.PAYMENT.name());
+        if(policyPayment.getOperator().equals(EnumPolicyOperator.equals.name())){
+            String numericPart = policyPayment.getValue().replace("%", "").trim();
+            BigDecimal paymentPercent = new BigDecimal(numericPart).divide(BigDecimal.valueOf(100));
+            System.out.println("payment percent: " + paymentPercent);
+            paymentPrice = booking.getTotalPrice().multiply(paymentPercent);
+            System.out.println("payment price: " + paymentPrice);
+        }
         CreateOrderRequest createOrderRequest = CreateOrderRequest.builder()
                 .orderId(booking.getId())
-                .amount(booking.getTotalPrice().longValue())
+                .amount(paymentPrice.longValue())
                 .paymentType(EnumPaymentType.DEPOSIT.name())
                 .build();
         return zaloPayService.createOrder(createOrderRequest);

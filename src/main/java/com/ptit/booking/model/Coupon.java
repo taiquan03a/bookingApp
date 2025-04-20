@@ -61,6 +61,7 @@ public class Coupon {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rank_id")
+    @JsonIgnore
     private Rank rank;
 
 }
