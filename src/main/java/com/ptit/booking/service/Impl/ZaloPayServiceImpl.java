@@ -335,7 +335,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
 
         // Thêm embed_data với return_url để redirect sau khi thanh toán
         JSONObject embedData = new JSONObject();
-        embedData.put("userId",String.valueOf(request.getOrderId()));
+        embedData.put("bookingId",String.valueOf(request.getOrderId()));
         if(request.getPaymentType().equals(EnumPaymentType.DEPOSIT.name())){
             embedData.put("redirecturl", "myapp://payment-result");
         }else {

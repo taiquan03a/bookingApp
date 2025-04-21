@@ -12,4 +12,6 @@ import java.util.List;
 public interface UserDeviceRepository extends JpaRepository<UserDevice, Long> {
     @Query("select ud from UserDevice ud where ud.user.id = :userId")
     List<UserDevice> findByUserId(@Param("userId") Long userId);
+    boolean existsByDeviceToken(String deviceToken);
+
 }

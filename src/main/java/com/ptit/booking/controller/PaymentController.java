@@ -1,12 +1,17 @@
 package com.ptit.booking.controller;
 
 import com.ptit.booking.configuration.ZaloPayConfig;
+import com.ptit.booking.constants.NotificationConstants;
 import com.ptit.booking.dto.PaymentBookingRequest;
 import com.ptit.booking.dto.booking.BookingRoomRequest;
 import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
 import com.ptit.booking.dto.zaloPay.RefundOrderRequest;
 import com.ptit.booking.dto.zaloPay.RefundResponse;
 import com.ptit.booking.enums.EnumBookingStatus;
+import com.ptit.booking.enums.EnumNotificationType;
+import com.ptit.booking.enums.EnumPaymentType;
+import com.ptit.booking.exception.AppException;
+import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.model.Booking;
 import com.ptit.booking.model.Payment;
 import com.ptit.booking.repository.BookingRepository;
@@ -26,6 +31,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -88,14 +94,27 @@ public class PaymentController {
 
             String embedDataStr = data.getString("embed_data");
             JSONObject embedData = new JSONObject(embedDataStr);
-            String userId = embedData.getString("userId");
-            System.out.println("userId: " + userId);
+            String bookingId = embedData.getString("bookingId");
+            System.out.println("booking id call back: " + bookingId);
+            Booking booking = bookingRepository.findById(Long.valueOf(bookingId))
+                    .orElseThrow(()-> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
             // kiểm tra callback hợp lệ (đến từ ZaloPay server)
             if (!reqMac.equals(mac)) {
                 // callback không hợp lệ
                 result.put("return_code", -1);
                 result.put("return_message", "mac not equal");
-                //notificationService.sendNotification();
+                String title = NotificationConstants.Template.Payment.TITLE_FAIL;
+                String message = String.format(
+                        NotificationConstants.Template.Payment.MESSAGE_FAIL,
+                        booking.getHotel().getName()
+                );
+                notificationService.sendNotification(
+                        booking.getUser().getId(),
+                        title,
+                        message,
+                        EnumNotificationType.PAYMENT
+                );
             } else {
                 // thanh toán thành công
                 // merchant cập nhật trạng thái cho đơn hàng
@@ -107,11 +126,31 @@ public class PaymentController {
                 payment.setZpTransId(zpTransId);
                 payment.setPaymentStatus(EnumBookingStatus.BOOKED.name());
                 paymentRepository.save(payment);
-                Booking booking = payment.getBooking();
+                //Booking booking = payment.getBooking();
                 booking.setStatus(EnumBookingStatus.BOOKED.name());
                 bookingRepository.save(booking);
                 result.put("return_code", 1);
                 result.put("return_message", "success");
+                String title = "";
+                String message = "";
+                if(payment.getPaymentType().equals(EnumPaymentType.REMAINING.name())){
+                    title = NotificationConstants.Template.Checkin.TITLE_SUCCESS;
+                    message = String.format(
+                            NotificationConstants.Template.Checkin.MESSAGE_SUCCESS,
+                            booking.getHotel().getName(), booking.getCheckIn(), booking.getCheckOut(), LocalDateTime.now()
+                    );
+                }
+                title = NotificationConstants.Template.Booking.TITLE_SUCCESS;
+                message = String.format(
+                        NotificationConstants.Template.Booking.MESSAGE_SUCCESS,
+                        booking.getHotel().getName(), booking.getCheckIn(), booking.getCheckOut()
+                );
+                notificationService.sendNotification(
+                        booking.getUser().getId(),
+                        title,
+                        message,
+                        EnumNotificationType.BOOKING
+                );
             }
         } catch (Exception ex) {
             result.put("return_code", 0); // ZaloPay server sẽ callback lại (tối đa 3 lần)

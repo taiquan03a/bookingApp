@@ -1,6 +1,7 @@
 package com.ptit.booking.service.Impl;
 
 import com.ptit.booking.constants.ErrorMessage;
+import com.ptit.booking.constants.NotificationConstants;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.booking.*;
@@ -11,16 +12,14 @@ import com.ptit.booking.dto.serviceRoom.ServiceBooked;
 import com.ptit.booking.dto.serviceRoom.ServiceRoomDto;
 import com.ptit.booking.dto.zaloPay.RefundOrderRequest;
 import com.ptit.booking.dto.zaloPay.RefundResponse;
-import com.ptit.booking.enums.EnumBookingStatus;
-import com.ptit.booking.enums.EnumPaymentType;
-import com.ptit.booking.enums.EnumPolicyOperator;
-import com.ptit.booking.enums.EnumPolicyType;
+import com.ptit.booking.enums.*;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
 import com.ptit.booking.exception.ErrorResponse;
 import com.ptit.booking.model.*;
 import com.ptit.booking.repository.*;
 import com.ptit.booking.service.BookingService;
+import com.ptit.booking.service.NotificationService;
 import com.ptit.booking.service.ZaloPayService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +52,7 @@ public class BookingServiceImpl implements BookingService {
     private final ZaloPayService zaloPayService;
     private final PaymentRepository paymentRepository;
     private final PolicyRepository policyRepository;
+    private final NotificationService notificationService;
 
     @Override
     public ResponseEntity<?> booking(BookingRoomRequest bookingRoomRequest, Principal principal) {
@@ -281,8 +281,20 @@ public class BookingServiceImpl implements BookingService {
             booking.setStatus(EnumBookingStatus.CANCELED.name());
             paymentRepository.save(paymentDeposit);
             bookingRepository.save(booking);
+            String title = NotificationConstants.Template.Cancel.TITLE_SUCCESS;
+            String message = String.format(
+                    NotificationConstants.Template.Cancel.MESSAGE_SUCCESS,
+                    booking.getHotel().getName(), booking.getCheckIn(), booking.getCheckOut()
+            );
+            notificationService.sendNotification(
+                    booking.getUser().getId(),
+                    title,
+                    message,
+                    EnumNotificationType.BOOKING
+            );
             return ResponseEntity.status(HttpStatus.OK).body(
                     ApiResponse.builder()
+                            .message(SuccessMessage.REFUND_BOOKING_SUCCESSFULLY)
                             .statusCode(HttpStatus.OK.value())
                             .build()
             );
@@ -299,12 +311,34 @@ public class BookingServiceImpl implements BookingService {
             booking.setStatus(EnumBookingStatus.CANCELED.name());
             paymentRepository.save(paymentDeposit);
             bookingRepository.save(booking);
+            String title = NotificationConstants.Template.Booking.TITLE_SUCCESS;
+            String message = String.format(
+                    NotificationConstants.Template.Booking.MESSAGE_SUCCESS,
+                    booking.getHotel().getName(), booking.getCheckIn(), booking.getCheckOut()
+            );
+            notificationService.sendNotification(
+                    booking.getUser().getId(),
+                    title,
+                    message,
+                    EnumNotificationType.BOOKING
+            );
             return ResponseEntity.ok(ApiResponse.builder()
                     .statusCode(HttpStatus.OK.value())
                     .message(SuccessMessage.REFUND_BOOKING_SUCCESSFULLY)
                     .data(refundResponse)
                     .build());
         }
+        String title = NotificationConstants.Template.Cancel.TITLE_FAIL;
+        String message = String.format(
+                NotificationConstants.Template.Cancel.MESSAGE_FAIL,
+                booking.getHotel().getName()
+        );
+        notificationService.sendNotification(
+                booking.getUser().getId(),
+                title,
+                message,
+                EnumNotificationType.BOOKING
+        );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
                 .statusCode(2010)
                 .message(ErrorMessage.REFUND_BOOKING_FAIL)

@@ -1,6 +1,7 @@
 package com.ptit.booking.service.Impl;
 
 import com.ptit.booking.constants.ErrorMessage;
+import com.ptit.booking.constants.NotificationConstants;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.booking.HistoryBookingDetailResponse;
@@ -12,6 +13,7 @@ import com.ptit.booking.dto.web.BookingWebResponse;
 import com.ptit.booking.dto.web.HotelWebResponse;
 import com.ptit.booking.dto.zaloPay.CreateOrderRequest;
 import com.ptit.booking.enums.EnumBookingStatus;
+import com.ptit.booking.enums.EnumNotificationType;
 import com.ptit.booking.enums.EnumPaymentType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
@@ -21,6 +23,7 @@ import com.ptit.booking.repository.BookingRepository;
 import com.ptit.booking.repository.BookingServiceEntityRepository;
 import com.ptit.booking.repository.HotelRepository;
 import com.ptit.booking.repository.ServiceRepository;
+import com.ptit.booking.service.NotificationService;
 import com.ptit.booking.service.WebService;
 import com.ptit.booking.service.ZaloPayService;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +48,7 @@ public class WebServiceImpl implements WebService {
     private final ServiceRepository serviceRepository;
     private final BookingServiceEntityRepository bookingServiceEntityRepository;
     private final ZaloPayService zaloPayService;
+    private final NotificationService notificationService;
 
     @Override
     public ResponseEntity<?> getAllHotel() {
@@ -211,6 +215,17 @@ public class WebServiceImpl implements WebService {
         BigDecimal remainingPrice = booking.getTotalPrice().subtract(payment.getAmount());
         if(remainingPrice.compareTo(BigDecimal.ZERO) == 0){
             bookingRepository.save(booking);
+            String title = NotificationConstants.Template.Checkin.TITLE_SUCCESS;
+            String message = String.format(
+                    NotificationConstants.Template.Checkin.MESSAGE_SUCCESS,
+                    booking.getHotel().getName()
+            );
+            notificationService.sendNotification(
+                    booking.getUser().getId(),
+                    title,
+                    message,
+                    EnumNotificationType.BOOKING
+            );
             return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.builder()
                     .statusCode(200)
                     .message(SuccessMessage.CHECKIN_SUCCESSFULLY)
@@ -229,6 +244,7 @@ public class WebServiceImpl implements WebService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<?> checkOutStatus(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
@@ -241,6 +257,17 @@ public class WebServiceImpl implements WebService {
         }
         booking.setStatus(EnumBookingStatus.CHECKOUT.name());
         bookingRepository.save(booking);
+        String title = NotificationConstants.Template.Checkout.TITLE_SUCCESS;
+        String message = String.format(
+                NotificationConstants.Template.Checkout.MESSAGE_SUCCESS,
+                booking.getHotel().getName(), booking.getCheckIn(), booking.getCheckOut()
+        );
+        notificationService.sendNotification(
+                booking.getUser().getId(),
+                title,
+                message,
+                EnumNotificationType.BOOKING
+        );
         return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.builder()
                 .statusCode(200)
                 .message(SuccessMessage.CHECKOUT_SUCCESSFULLY)

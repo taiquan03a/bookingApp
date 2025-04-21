@@ -1,14 +1,17 @@
 package com.ptit.booking.service.Impl;
 
+import com.cloudinary.Cloudinary;
 import com.cloudinary.api.exceptions.ApiException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.auth.AuthErrorCode;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import com.ptit.booking.constants.ErrorMessage;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.auth.*;
+import com.ptit.booking.dto.user.UpdateProfileRequest;
 import com.ptit.booking.enums.EnumRole;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
@@ -21,6 +24,7 @@ import com.ptit.booking.repository.TokenRepository;
 import com.ptit.booking.repository.UserRepository;
 import com.ptit.booking.security.JwtService;
 import com.ptit.booking.service.AuthenticationService;
+import com.ptit.booking.service.CloudinaryService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -52,6 +56,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final TokenRepository tokenRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final CloudinaryService cloudinary;
 
 
     @Override
@@ -118,6 +123,35 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .statusCode(200)
                 .message(String.valueOf(HttpStatus.OK))
                 .description("Mật khẩu của bạn đã cập nhập thành công.")
+                .timestamp(new Date(System.currentTimeMillis()))
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> updateProfile(UpdateProfileRequest request,Principal principal) {
+        User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
+        if(user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
+                    .statusCode(HttpStatus.UNAUTHORIZED.value())
+                    .message(ErrorMessage.PLEASE_LOGIN)
+                    .timestamp(new Date(System.currentTimeMillis()))
+                    .build());
+        }
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+
+        if(request.getImage() != null){
+            String url = cloudinary.uploadFile(request.getImage(),"user");
+            user.setAvatar(url);
+        }
+
+        userRepository.save(user);
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.builder()
+                .statusCode(200)
+                .message(String.valueOf(HttpStatus.OK))
+                .description("Cập nhật thông tin thành công.")
                 .timestamp(new Date(System.currentTimeMillis()))
                 .build());
     }

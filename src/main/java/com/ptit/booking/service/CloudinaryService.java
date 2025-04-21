@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public interface CloudinaryService {
-    Map<?, ?> uploadFile(MultipartFile file, String folderName);
+    String uploadFile(MultipartFile file, String folderName);
     List<String> uploadImages(List<MultipartFile> files, String folderName) throws IOException;
     CompletableFuture<String> uploadImage(MultipartFile imageFile);
     CompletableFuture<List<String>> uploadImageList(List<MultipartFile> imageFileList);

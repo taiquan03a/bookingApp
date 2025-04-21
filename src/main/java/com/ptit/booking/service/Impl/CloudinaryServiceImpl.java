@@ -18,14 +18,12 @@ import java.util.concurrent.CompletableFuture;
 public class CloudinaryServiceImpl  implements CloudinaryService {
     private final Cloudinary cloudinary;
     @Override
-    public Map<?, ?> uploadFile(MultipartFile file, String folderName) {
+    public String uploadFile(MultipartFile file, String folderName) {
         try{
             HashMap<Object, Object> options = new HashMap<>();
             options.put("folder", folderName);
             Map<?,?> uploadedFile = cloudinary.uploader().upload(file.getBytes(), options);
-            String publicId = (String) uploadedFile.get("public_id");
-            String resourceType = (String) uploadedFile.get("resource_type");
-            return uploadedFile;
+            return uploadedFile.get("url").toString();
 
         }catch (java.io.IOException e){
             e.printStackTrace();

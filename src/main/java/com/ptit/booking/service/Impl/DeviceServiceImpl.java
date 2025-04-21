@@ -23,12 +23,18 @@ public class DeviceServiceImpl implements DeviceService {
     @Transactional
     public void registerDevice(DeviceRegistrationRequest request, Principal principal) {
         User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
+
+        boolean alreadyExists = userDeviceRepository.existsByDeviceToken(request.deviceToken());
+        if (alreadyExists) {
+            return; // Không cần lưu nếu đã tồn tại
+        }
+
         UserDevice device = UserDevice.builder()
                 .user(user)
                 .deviceToken(request.deviceToken())
                 .deviceType(request.deviceType())
                 .build();
         userDeviceRepository.save(device);
-
     }
+
 }

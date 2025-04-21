@@ -51,6 +51,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .message(message)
                 .type(type)
                 .status(EnumNotificationStatus.PENDING)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         notification = notificationRepository.save(notification);
