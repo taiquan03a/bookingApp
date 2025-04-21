@@ -345,6 +345,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             AuthenticationResponse data = AuthenticationResponse.builder()
                     .accessToken(jwtToken)
                     .roles(roles)
+                    .userId(user.getId())
                     .build();
             return ResponseEntity.ok(ApiResponse.builder()
                     .statusCode(HttpStatus.OK.value())

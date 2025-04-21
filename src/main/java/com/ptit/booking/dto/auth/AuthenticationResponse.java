@@ -13,4 +13,5 @@ import java.util.List;
 public class AuthenticationResponse {
     private String accessToken;
     private List<String> roles;
+    private Long userId;
 }

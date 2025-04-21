@@ -67,7 +67,7 @@ public class NotificationServiceImpl implements NotificationService {
             Long notificationId = createNotification(userId, title, message, type);
 
             // Gửi qua WebSocket
-            webSocketNotificationService.sendNotificationToUser(userId, title, message);
+            webSocketNotificationService.sendNotificationToUser(userId,notificationId, title, message);
 
             // Gửi qua Expo Push
             List<UserDevice> devices = userDeviceRepository.findByUserId(userId);

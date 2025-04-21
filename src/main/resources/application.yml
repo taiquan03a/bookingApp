@@ -68,8 +68,8 @@ springdoc:
     multipart:
       enabled: true
       file-size-threshold: 10MB
-      max-file-size: 50MB
-      max-request-size: 50MB
+      max-file-size: 500MB
+      max-request-size: 500MB
   foursquare:
     api:
       key: fsq3VsauLSw5an6aSmbScZFmlw1nco2b+9ozuSaKfVJzdK4=
