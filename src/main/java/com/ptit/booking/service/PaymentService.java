@@ -8,4 +8,5 @@ import java.security.Principal;
 
 public interface PaymentService {
     ResponseEntity<?> checkout (PaymentBookingRequest bookingRoomRequest, Principal principal);
+
 }

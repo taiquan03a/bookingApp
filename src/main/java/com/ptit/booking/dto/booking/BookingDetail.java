@@ -15,6 +15,7 @@ public class BookingDetail {
     private String hotelName;
     private String hotelAddress;
     private int totalAdults;
+    private String policyPayment;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
     private LocalDateTime checkIn;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
@@ -24,5 +25,6 @@ public class BookingDetail {
     private String totalPriceRoom;
     private String priceCoupon;
     private String totalPriceService;
+    private String priceDeposit;
     private String finalPrice;
 }

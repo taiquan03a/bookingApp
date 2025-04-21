@@ -143,21 +143,33 @@ public class BookingServiceImpl implements BookingService {
             priceCoupon = couponRepository.calculateDiscountAmount(
                     coupon,totalPrice);
         }
+        Policy policyPayment = hotelRepository.findPoliciesByHotelAndType(hotel, EnumPolicyType.PAYMENT.name());
 
+        BigDecimal finalPrice = totalPrice.subtract(priceCoupon);
+        BigDecimal paymentPrice = finalPrice;
+        if(policyPayment.getOperator().equals(EnumPolicyOperator.equals.name())){
+            String numericPart = policyPayment.getValue().replace("%", "").trim();
+            BigDecimal paymentPercent = new BigDecimal(numericPart).divide(BigDecimal.valueOf(100));
+            System.out.println("payment percent: " + paymentPercent);
+            paymentPrice = totalPrice.multiply(paymentPercent);
+            System.out.println("payment price: " + paymentPrice);
+        }
 
         BookingDetail bookingDetail = BookingDetail.builder()
                 .hotelId(hotel.getId())
                 .hotelName(hotel.getName())
                 .hotelAddress(hotel.getLocation().getName())
                 .totalAdults(totalAdults)
+                .policyPayment(policyPayment.getDescription())
                 .checkIn(bookingRoomRequest.getCheckInDate().atTime(hotel.getCheckInTime()))
                 .checkOut(bookingRoomRequest.getCheckOutDate().atTime(hotel.getCheckOutTime()))
                 .roomBookedList(roomBookedList)
                 .couponCode(coupon.getCode())
+                .priceDeposit(paymentPrice.setScale(2, RoundingMode.HALF_UP).toString())
                 .priceCoupon(priceCoupon.setScale(2, RoundingMode.HALF_UP).toString())
                 .totalPriceRoom(totalPriceRoom.setScale(2, RoundingMode.HALF_UP).toString())
                 .totalPriceService(totalPriceService.setScale(2, RoundingMode.HALF_UP).toString())
-                .finalPrice(totalPrice.subtract(priceCoupon).setScale(2, RoundingMode.HALF_UP).toString())
+                .finalPrice(finalPrice.setScale(2, RoundingMode.HALF_UP).toString())
                 .build();
         return ResponseEntity.ok(ApiResponse.builder()
                 .statusCode(HttpStatus.OK.value())
