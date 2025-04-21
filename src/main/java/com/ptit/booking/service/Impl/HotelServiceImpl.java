@@ -129,6 +129,16 @@ public class HotelServiceImpl implements HotelService {
 
     @Override
     public ResponseEntity<?> search(String sortBy, String sort, int page, FilterRequest filterRequest, Principal principal) throws JsonProcessingException {
+
+        if (filterRequest.getCheckin().isBefore(LocalDate.now())) {
+            throw new AppException(ErrorCode.CHECKIN_NOW);
+        }
+        if (!filterRequest.getCheckout().isAfter(filterRequest.getCheckin())) {
+            throw new AppException(ErrorCode.CHECKOUT_AFTER_CHECKIN);
+        }
+        if (ChronoUnit.DAYS.between(filterRequest.getCheckin(), filterRequest.getCheckout()) > 30) {
+            throw new AppException(ErrorCode.DURATION_NOT_30);
+        }
         User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
         Pageable pageable = PageRequest.of(page, 5);
         if(user != null){

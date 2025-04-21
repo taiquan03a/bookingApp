@@ -35,7 +35,10 @@ public enum ErrorCode {
     NOTIFICATION_FAILED(2007, "Notification failed", HttpStatus.BAD_REQUEST),
     BOOKING_NOT_FOUND(2008, "Booking not found", HttpStatus.NOT_FOUND),
     PAYMENT_DEPOSIT_NOT_FOUND(2009, "Payment deposit not found", HttpStatus.NOT_FOUND),
-    REVIEW_NOT_FOUND(20010, "Review not found", HttpStatus.NOT_FOUND),
+    REVIEW_NOT_FOUND(2010, "Review not found", HttpStatus.NOT_FOUND),
+    CHECKIN_NOW(2011, "Ngày nhận phòng không được trước hôm nay.", HttpStatus.BAD_REQUEST),
+    CHECKOUT_AFTER_CHECKIN(2012, "Ngày trả phòng phải sau ngày nhận phòng.", HttpStatus.BAD_REQUEST),
+    DURATION_NOT_30(2013,"Thời gian lưu trú không được vượt quá 30 ngày.", HttpStatus.BAD_REQUEST),;
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
