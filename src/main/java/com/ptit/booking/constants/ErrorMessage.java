@@ -31,4 +31,5 @@ public class ErrorMessage {
     public static final String BOOKING_IS_NOT_HOTEL = "Khách sạn bạn đặt khác với khách sạn bạn đánh giá.";
     public static final String MAXIMUM_5_IMAGE = "Chỉ được tối đa 5 ảnh.";
     public static final String USER_SAVED_COUPON = "Bạn đã lưu mã khuyến mãi này rồi.";
+    public static final String CHECKOUT_FAIL = "Lỗi checkout";
 }

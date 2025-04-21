@@ -134,6 +134,13 @@ public class WebServiceImpl implements WebService {
                             .build();
                 }).toList();
         Set<Payment> payment = booking.getPayments();
+        BigDecimal currentPricePayment = payment.stream()
+                .filter(
+                        pay -> pay.getPaymentType().equals(EnumPaymentType.DEPOSIT.name())
+                )
+                .findFirst()
+                .map(Payment::getAmount)
+                .orElse(null);
         BookingDetailWebResponse historyDetail = BookingDetailWebResponse.builder()
                 .customerName(booking.getCustomerName())
                 .customerEmail(booking.getCustomerEmail())
@@ -172,15 +179,7 @@ public class WebServiceImpl implements WebService {
                                 .map(pay -> pay.getAmount().toString())
                                 .orElse(null)
                 )
-                .paymentRemaining(
-                        payment.stream()
-                                .filter(
-                                        pay -> pay.getPaymentType().equals(EnumPaymentType.REMAINING.name())
-                                )
-                                .findFirst()
-                                .map(pay -> pay.getAmount().toString())
-                                .orElse(null)
-                )
+                .paymentRemaining(booking.getTotalPrice().subtract(currentPricePayment).toString())
                 .build();
         return ResponseEntity.ok(ApiResponse.builder()
                 .statusCode(HttpStatus.OK.value())
@@ -233,14 +232,20 @@ public class WebServiceImpl implements WebService {
     public ResponseEntity<?> checkOutStatus(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
-        if(!booking.getStatus().equals(EnumBookingStatus.CHECKOUT.name())){
+        if(!booking.getStatus().equals(EnumBookingStatus.CHECKIN.name())){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
                     .statusCode(409)
-                    .message(ErrorMessage.CHECKIN_FAILED)
+                    .message(ErrorMessage.CHECKOUT_FAIL)
                     .timestamp(new Date(System.currentTimeMillis()))
                     .build());
         }
-        return null;
+        booking.setStatus(EnumBookingStatus.CHECKOUT.name());
+        bookingRepository.save(booking);
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.builder()
+                .statusCode(200)
+                .message(SuccessMessage.CHECKOUT_SUCCESSFULLY)
+                .timestamp(new Date(System.currentTimeMillis()))
+                .build());
     }
 
     @Override

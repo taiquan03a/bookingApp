@@ -25,4 +25,5 @@ public class SuccessMessage {
     public static final String SEND_REVIEW_SUCCESSFULLY = "Send review successfully";
     public static final String REVIEW_DETAIL_SUCCESSFULLY = "Review detail successfully";
     public static final String CHECKIN_SUCCESSFULLY = "Checkin successfully";
+    public static final String CHECKOUT_SUCCESSFULLY = "Checkout successfully";
 }

@@ -11,6 +11,7 @@ import com.ptit.booking.model.Booking;
 import com.ptit.booking.model.Payment;
 import com.ptit.booking.repository.BookingRepository;
 import com.ptit.booking.repository.PaymentRepository;
+import com.ptit.booking.service.NotificationService;
 import com.ptit.booking.service.PaymentService;
 import com.ptit.booking.service.ZaloPayService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +37,7 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
+    private final NotificationService notificationService;
 
     private Logger logger = Logger.getLogger(this.getClass().getName());
     private Mac HmacSHA256;
@@ -82,16 +84,22 @@ public class PaymentController {
 
             byte[] hashBytes = HmacSHA256.doFinal(dataStr.getBytes());
             String mac = DatatypeConverter.printHexBinary(hashBytes).toLowerCase();
+            JSONObject data = new JSONObject(dataStr);
 
+            String embedDataStr = data.getString("embed_data");
+            JSONObject embedData = new JSONObject(embedDataStr);
+            String userId = embedData.getString("userId");
+            System.out.println("userId: " + userId);
             // kiểm tra callback hợp lệ (đến từ ZaloPay server)
             if (!reqMac.equals(mac)) {
                 // callback không hợp lệ
                 result.put("return_code", -1);
                 result.put("return_message", "mac not equal");
+                //notificationService.sendNotification();
             } else {
                 // thanh toán thành công
                 // merchant cập nhật trạng thái cho đơn hàng
-                JSONObject data = new JSONObject(dataStr);
+
                 logger.info("data: " + data.toString());
 //                logger.info("update order's status = success where app_trans_id = " + data.getString("app_trans_id"));
                 Payment payment = paymentRepository.findByAppTransId(data.getString("app_trans_id"));

@@ -182,6 +182,7 @@ public class BookingServiceImpl implements BookingService {
                 List<HotelHistoryResponse> hotelBookedList = bookedList.stream().map(booking -> {
                     Hotel hotel = booking.getHotel();
                     return HotelHistoryResponse.builder()
+                            .hotelId(hotel.getId())
                             .bookingId(booking.getId())
                             .hotelName(hotel.getName())
                             .rating(hotel.getRating())
@@ -345,6 +346,7 @@ public class BookingServiceImpl implements BookingService {
                 }).toList();
         Set<Payment> payment = booking.getPayments();
         HistoryBookingDetailResponse historyDetail = HistoryBookingDetailResponse.builder()
+                .hotelId(booking.getHotel().getId())
                 .bookingStatus(booking.getStatus())
                 .bookingStatusTime(booking.getUpdateAt())
                 .bookingId(bookingId)

@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class HotelHistoryResponse {
+    private Long hotelId;
     private Long bookingId;
     private String hotelName;
     private float rating;

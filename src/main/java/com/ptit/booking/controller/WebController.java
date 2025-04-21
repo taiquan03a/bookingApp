@@ -34,4 +34,8 @@ public class WebController {
     public ResponseEntity<?> checkIn(@PathVariable Long bookingId) {
         return webService.checkInStatus(bookingId);
     }
+    @GetMapping("checkout/{bookingId}")
+    public ResponseEntity<?> checkOut(@PathVariable Long bookingId) {
+        return webService.checkOutStatus(bookingId);
+    }
 }
