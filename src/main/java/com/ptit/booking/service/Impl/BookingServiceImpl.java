@@ -31,6 +31,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -153,10 +154,10 @@ public class BookingServiceImpl implements BookingService {
                 .checkOut(bookingRoomRequest.getCheckOutDate().atTime(hotel.getCheckOutTime()))
                 .roomBookedList(roomBookedList)
                 .couponCode(coupon.getCode())
-                .priceCoupon(String.valueOf(priceCoupon))
-                .totalPriceRoom(String.valueOf(totalPriceRoom))
-                .totalPriceService(String.valueOf(totalPriceService))
-                .finalPrice(String.valueOf(totalPrice.subtract(priceCoupon)))
+                .priceCoupon(priceCoupon.setScale(2, RoundingMode.HALF_UP).toString())
+                .totalPriceRoom(totalPriceRoom.setScale(2, RoundingMode.HALF_UP).toString())
+                .totalPriceService(totalPriceService.setScale(2, RoundingMode.HALF_UP).toString())
+                .finalPrice(totalPrice.subtract(priceCoupon).setScale(2, RoundingMode.HALF_UP).toString())
                 .build();
         return ResponseEntity.ok(ApiResponse.builder()
                 .statusCode(HttpStatus.OK.value())

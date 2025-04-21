@@ -1,5 +1,6 @@
 package com.ptit.booking.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ptit.booking.enums.EnumNotificationStatus;
 import com.ptit.booking.enums.EnumNotificationType;
 import jakarta.persistence.*;
@@ -52,6 +53,7 @@ public class Notification {
     private EnumNotificationType type;
 
     @Column(name = "send_at")
+    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "dd-MM-yyyy HH:mm")
     private LocalDateTime sendAt;
 
 }

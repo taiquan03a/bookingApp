@@ -10,6 +10,7 @@ public record NotificationDto(
         String title,
         String message,
         EnumNotificationType type,
+        boolean isRead,
         LocalDateTime createdAt
 ) {
     public static NotificationDto fromEntity(Notification notification) {
@@ -18,6 +19,7 @@ public record NotificationDto(
                 notification.getTitle(),
                 notification.getMessage(),
                 notification.getType(),
+                notification.getIsRead(),
                 notification.getCreatedAt()
         );
     }

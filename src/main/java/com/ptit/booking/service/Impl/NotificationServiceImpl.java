@@ -50,6 +50,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .title(title)
                 .message(message)
                 .type(type)
+                .isRead(false)
                 .status(EnumNotificationStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -90,9 +91,19 @@ public class NotificationServiceImpl implements NotificationService {
     private void sendPushNotification(UserDevice device, String title, String message, Long notificationId) {
         try {
             HttpClient client = HttpClient.newHttpClient();
+            // ✅ JSON payload với thêm trường "data"
             String payload = String.format(
-                    "{\"to\": \"%s\", \"title\": \"%s\", \"body\": \"%s\"}",
-                    device.getDeviceToken(), title, message
+                    """
+                    {
+                        "to": "%s",
+                        "title": "%s",
+                        "body": "%s",
+                        "data": {
+                            "navigateTo": "TestScreen"
+                        }
+                    }
+                    """,
+                    device.getDeviceToken(), escapeJson(title), escapeJson(message)
             );
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://exp.host/--/api/v2/push/send"))
@@ -114,6 +125,11 @@ public class NotificationServiceImpl implements NotificationService {
             throw new AppException(ErrorCode.NOTIFICATION_FAILED);
         }
     }
+    private String escapeJson(String text) {
+        return text.replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r");
+    }
 
     @Transactional
     public void updateNotificationStatus(Long notificationId, EnumNotificationStatus status) {
@@ -131,5 +147,17 @@ public class NotificationServiceImpl implements NotificationService {
     public Page<Notification> getUserNotifications(Principal principal, Pageable pageable) {
         User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
         return notificationRepository.findByUserId(user.getId(), pageable);
+    }
+
+    @Override
+    public boolean readNotification(Long notificationId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOTIFICATION_BAD));
+        if(!notification.getIsRead()){
+            notification.setIsRead(true);
+            notificationRepository.save(notification);
+            return true;
+        }
+        return false;
     }
 }

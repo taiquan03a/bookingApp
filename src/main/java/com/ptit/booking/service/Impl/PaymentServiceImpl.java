@@ -155,10 +155,11 @@ public class PaymentServiceImpl implements PaymentService {
                      totalPriceRoom.add(totalServicePrice)
             );
         }
-        booking.setTotalPrice(totalPriceRoom);
+
         booking.setTotalServicePrice(totalServicePrice);
-        booking.setPromotionPrice(totalRoomNotPromotion.subtract(totalServicePrice));
+        booking.setPromotionPrice(totalRoomNotPromotion.subtract(totalPriceRoom));
         booking.setCouponPrice(couponPrice);
+        booking.setTotalPrice(totalPriceRoom.subtract(couponPrice));
         bookingRepository.save(booking);
         for (BookingRoom room : bookingRoomList) {
             room.setBooking(booking);

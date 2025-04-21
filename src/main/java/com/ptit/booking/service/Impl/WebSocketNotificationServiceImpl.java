@@ -15,7 +15,7 @@ public class WebSocketNotificationServiceImpl implements WebSocketNotificationSe
     private final SimpMessagingTemplate messagingTemplate;
 
     public void sendNotificationToUser(Long userId,Long notificationId, String title, String message) {
-        NotificationDto notificationDto = new NotificationDto(notificationId, title, message, null, null);
+        NotificationDto notificationDto = new NotificationDto(notificationId, title, message, null, false,null);
         log.info("Sending notification to user {}", userId);
         messagingTemplate.convertAndSend("/topic/notifications/" + userId, notificationDto);
     }

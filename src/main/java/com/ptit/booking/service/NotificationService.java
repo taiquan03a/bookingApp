@@ -10,4 +10,5 @@ import java.security.Principal;
 public interface NotificationService {
     void sendNotification(Long userId, String title, String message, EnumNotificationType type);
     Page<Notification> getUserNotifications(Principal principal, Pageable pageable);
+    boolean readNotification(Long notificationId);
 }
