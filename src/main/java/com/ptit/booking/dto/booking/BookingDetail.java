@@ -21,6 +21,7 @@ public class BookingDetail {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
     private LocalDateTime checkOut;
     private List<RoomBooked> roomBookedList;
+    private Long couponId;
     private String couponCode;
     private String totalPriceRoom;
     private String priceCoupon;

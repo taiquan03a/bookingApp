@@ -147,11 +147,12 @@ public class BookingServiceImpl implements BookingService {
 
         BigDecimal finalPrice = totalPrice.subtract(priceCoupon);
         BigDecimal paymentPrice = finalPrice;
+        System.out.println("finalPrice: " + finalPrice);
         if(policyPayment.getOperator().equals(EnumPolicyOperator.equals.name())){
             String numericPart = policyPayment.getValue().replace("%", "").trim();
             BigDecimal paymentPercent = new BigDecimal(numericPart).divide(BigDecimal.valueOf(100));
             System.out.println("payment percent: " + paymentPercent);
-            paymentPrice = totalPrice.multiply(paymentPercent);
+            paymentPrice = finalPrice.multiply(paymentPercent);
             System.out.println("payment price: " + paymentPrice);
         }
 
@@ -164,6 +165,7 @@ public class BookingServiceImpl implements BookingService {
                 .checkIn(bookingRoomRequest.getCheckInDate().atTime(hotel.getCheckInTime()))
                 .checkOut(bookingRoomRequest.getCheckOutDate().atTime(hotel.getCheckOutTime()))
                 .roomBookedList(roomBookedList)
+                .couponId(coupon.getId())
                 .couponCode(coupon.getCode())
                 .priceDeposit(paymentPrice.setScale(2, RoundingMode.HALF_UP).toString())
                 .priceCoupon(priceCoupon.setScale(2, RoundingMode.HALF_UP).toString())
