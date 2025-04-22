@@ -183,6 +183,10 @@ public class PaymentServiceImpl implements PaymentService {
                 .amount(paymentPrice.longValue())
                 .paymentType(EnumPaymentType.DEPOSIT.name())
                 .build();
+        Coupon coupon = couponRepository.findById(bookingRoomRequest.getCouponId())
+                .orElseThrow(()-> new AppException(ErrorCode.COUPON_NOT_FOUND));
+        //UserCoupon userCoupon = coupon.getUserCoupons();
+
         return zaloPayService.createOrder(createOrderRequest);
     }
 }

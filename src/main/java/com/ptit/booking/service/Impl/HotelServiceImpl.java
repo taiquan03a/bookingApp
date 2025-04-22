@@ -193,29 +193,57 @@ public class HotelServiceImpl implements HotelService {
             }
         }
         Page<Hotel> hotels = hotelRepository.findAll(HotelSpecification.filterHotels(filterRequest,sortBy,sort), pageable);
-        Page<HotelRequest> hotelRequestPage = hotels.map(hotel -> new HotelRequest(
-                hotel.getId(),
-                hotel.getName(),
-                hotel.getLocation() != null ? hotel.getLocation().getName() : null,
-                hotel.getRating(),
-                hotel.getImages() != null ? hotel.getImages()
-                        .stream()
-                        .findFirst()
-                        .map(Image::getUrl)
-                        .orElse(null) : null,
-                hotel.getFeedbackSum(),
-                hotel.getPromotions() != null ? hotel.getPromotions()
-                        .stream()
-                        .findFirst()
-                        .map(Promotion::getName)
-                        .orElse(null) : null,
-                hotel.getRooms() != null ? hotel.getRooms()
-                        .stream()
-                        .map(Room::getPrice)
-                        .min(BigDecimal::compareTo)
-                        .orElse(BigDecimal.ZERO)
-                        .floatValue() : 0.0f
-        ));
+        Page<HotelRequest> hotelRequestPage = hotels.map(hotel -> {
+            String imageUrl = hotel.getImages() != null
+                    ? hotel.getImages().stream().findFirst().map(Image::getUrl).orElse(null)
+                    : null;
+
+            Promotion promotion = hotel.getPromotions() != null
+                    ? hotel.getPromotions().stream().findFirst().orElse(null)
+                    : null;
+
+            float price = hotel.getRooms() != null
+                    ? hotel.getRooms().stream().map(Room::getPrice).min(BigDecimal::compareTo)
+                    .orElse(BigDecimal.ZERO).floatValue()
+                    : 0.0f;
+
+            String promotionValueStr = promotion != null ? String.valueOf(promotion.getDiscountValue()) : null;
+            String promotionName = promotion != null ? promotion.getName() : null;
+
+            float promotionPrice = price;
+
+            if (promotion != null) {
+                if ("PERCENTAGE".equalsIgnoreCase(promotion.getDiscountType())) {
+                    try {
+                        float percent = Float.parseFloat(promotion.getDiscountValue().substring(0,promotion.getDiscountValue().length() - 1));
+                        promotionPrice = price - price * (percent / 100);
+                    } catch (NumberFormatException e) {
+                        // bỏ qua nếu format sai
+                    }
+                } else if ("FIXED".equalsIgnoreCase(promotion.getDiscountType())) {
+                    try {
+                        float fixed = Float.parseFloat(promotion.getDiscountValue().toString());
+                        promotionPrice = price - fixed;
+                    } catch (NumberFormatException e) {
+                        // bỏ qua nếu format sai
+                    }
+                }
+            }
+
+            return new HotelRequest(
+                    hotel.getId(),
+                    hotel.getName(),
+                    hotel.getLocation() != null ? hotel.getLocation().getName() : null,
+                    hotel.getRating(),
+                    imageUrl,
+                    hotel.getFeedbackSum(),
+                    promotionValueStr,
+                    String.format("%.0f", promotionPrice), // nếu bạn muốn format thành chuỗi không có số thập phân
+                    promotionName,
+                    price
+            );
+        });
+
         return ResponseEntity.ok(ApiResponse.builder()
                 .statusCode(HttpStatus.OK.value())
                 .message(SuccessMessage.FILTER_PAGE)

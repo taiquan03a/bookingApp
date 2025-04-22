@@ -29,10 +29,7 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.ptit.booking.constants.ErrorMessage.CHECKIN_AFTER_CHECKOUT;
 import static com.ptit.booking.constants.ErrorMessage.CHECKIN_MUST_TODAY_OR_FUTURE;
@@ -128,11 +125,16 @@ public class RoomServiceImpl implements RoomService {
                 })
                 .reduce(BigDecimal.ZERO,BigDecimal::add);
         BigDecimal finalPrice = (originalPrice.subtract(promotionPrice)).multiply(BigDecimal.valueOf(selectDay));
-        PromotionBookingRoom promotionBookingRoom = PromotionBookingRoom.builder()
-                .id(promotionList.stream().findFirst().get().getId())
-                .discountValue(promotionList.stream().findFirst().get().getDiscountValue())
-                .name(promotionList.stream().findFirst().get().getName())
-                .build();
+        Optional<Promotion> optionalPromotion = promotionList.stream().findFirst();
+
+        PromotionBookingRoom promotionBookingRoom = optionalPromotion
+                .map(promotion -> PromotionBookingRoom.builder()
+                        .id(promotion.getId())
+                        .discountValue(promotion.getDiscountValue())
+                        .name(promotion.getName())
+                        .build()
+                )
+                .orElse(null);
         return RoomResponse.builder()
                 .roomId(room.getId())
                 .roomName(room.getName())

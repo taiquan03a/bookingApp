@@ -17,6 +17,8 @@ public class HotelRequest {
     private float hotelRating;
     private String imageUrl;
     private int sumReview;
+    private String promotionValue;
+    private String promotionPrice;
     private String promotionName;
     //private List<Integer> roomIdList;
     private float price;
