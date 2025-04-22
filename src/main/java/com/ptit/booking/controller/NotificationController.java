@@ -39,6 +39,10 @@ public class NotificationController {
                 .map(NotificationDto::fromEntity);
         return ResponseEntity.ok(notifications.getContent());
     }
+    @GetMapping("/{notiId}/read")
+    public boolean readNotification(@PathVariable long notiId,Principal principal) {
+        return notificationService.readNotification(notiId);
+    }
 }
 
 //record NotificationRequest(Long userId, String title, String message, EnumNotificationType type) {}

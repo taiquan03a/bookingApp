@@ -1,5 +1,6 @@
 package com.ptit.booking.service.Impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ptit.booking.model.UserDevice;
 import com.ptit.booking.enums.EnumNotificationStatus;
 import com.ptit.booking.enums.EnumNotificationType;
@@ -28,7 +29,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -41,7 +44,7 @@ public class NotificationServiceImpl implements NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationServiceImpl.class);
 
     @Transactional
-    public Long createNotification(Long userId, String title, String message, EnumNotificationType type) {
+    public Notification createNotification(Long userId, String title, String message, EnumNotificationType type) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
@@ -57,7 +60,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         notification = notificationRepository.save(notification);
         logger.info("Created notification with ID: {} for userId: {}", notification.getId(), userId);
-        return notification.getId();
+        return notification;
     }
 
     @Async
@@ -65,20 +68,20 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendNotification(Long userId, String title, String message, EnumNotificationType type) {
         try {
             // Tạo và lưu notification trong transaction
-            Long notificationId = createNotification(userId, title, message, type);
+            Notification notification = createNotification(userId, title, message, type);
 
             // Gửi qua WebSocket
-            webSocketNotificationService.sendNotificationToUser(userId,notificationId, title, message);
+            webSocketNotificationService.sendNotificationToUser(userId,notification.getId(), title, message,type,notification.getIsRead(),notification.getCreatedAt());
 
             // Gửi qua Expo Push
             List<UserDevice> devices = userDeviceRepository.findByUserId(userId);
             if (devices.isEmpty()) {
                 logger.warn("No devices found for userId: {}", userId);
-                updateNotificationStatus(notificationId, EnumNotificationStatus.FAILED);
+                updateNotificationStatus(notification.getId(), EnumNotificationStatus.FAILED);
                 return;
             }
 
-            devices.forEach(device -> sendPushNotification(device, title, message, notificationId));
+            devices.forEach(device -> sendPushNotification(device, title, message, type ,notification.getIsRead(),notification.getCreatedAt(),notification.getId()));
         } catch (Exception e) {
             logger.error("Failed to send notification for userId: {}. Error: {}", userId, e.getMessage());
             throw new AppException(ErrorCode.NOTIFICATION_FAILED);
@@ -88,23 +91,40 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
 
-    private void sendPushNotification(UserDevice device, String title, String message, Long notificationId) {
+    private void sendPushNotification(UserDevice device, String title, String message,EnumNotificationType type,boolean isRead,LocalDateTime creatAt, Long notificationId) {
         try {
             HttpClient client = HttpClient.newHttpClient();
             // ✅ JSON payload với thêm trường "data"
-            String payload = String.format(
-                    """
-                    {
-                        "to": "%s",
-                        "title": "%s",
-                        "body": "%s",
-                        "data": {
-                            "navigateTo": "TestScreen"
-                        }
-                    }
-                    """,
-                    device.getDeviceToken(), escapeJson(title), escapeJson(message)
+//            String payload = String.format(
+//                    """
+//                    {
+//                        "to": "%s",
+//                        "title": "%s",
+//                        "body": "%s",
+//                        "data": {
+//                            "type": "%s",
+//                            "created_at": "%s"
+//                        }
+//                    }
+//                    """,
+//                    device.getDeviceToken(), escapeJson(title), escapeJson(message), type.toString(), creatAt.toString()
+//            );
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            String formattedCreatedAt = creatAt.format(formatter);
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> data = Map.of(
+                    "type", type.toString(),
+                    "created_at", formattedCreatedAt,
+                    "isRead",isRead
             );
+            Map<String, Object> body = Map.of(
+                    "to", device.getDeviceToken(),
+                    "title", title,
+                    "body", message,
+                    "data", data
+            );
+
+            String payload = mapper.writeValueAsString(body);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://exp.host/--/api/v2/push/send"))
                     .header("Content-Type", "application/json")
