@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import java.security.Principal;
 
 public interface CouponService {
-    ResponseEntity<?> getCouponByUser(Principal principal, String couponCode, float totalPrice);
+    ResponseEntity<?> getCouponByUser(Principal principal, String couponCode, float totalPrice,Long couponCurrentId);
     ResponseEntity<?> getCouponForBooking(Principal principal,Long bookingId);
     ResponseEntity<?> getRankingInfo();
     ResponseEntity<?> currentRanking(Principal principal);

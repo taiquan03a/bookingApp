@@ -17,9 +17,12 @@ cloudinary:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    password: Taiquan123@
-    url: jdbc:mysql://booking.mysql.database.azure.com:3306/booking
-    username: quannt
+#    password: Taiquan123@
+#    url: jdbc:mysql://booking.mysql.database.azure.com:3306/booking
+#    username: quannt
+    password:
+    url: jdbc:mysql://localhost:3306/booking
+    username: root
   jpa:
     show-sql: false
     hibernate:

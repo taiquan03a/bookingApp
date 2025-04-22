@@ -38,7 +38,8 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND(2010, "Review not found", HttpStatus.NOT_FOUND),
     CHECKIN_NOW(2011, "Ngày nhận phòng không được trước hôm nay.", HttpStatus.BAD_REQUEST),
     CHECKOUT_AFTER_CHECKIN(2012, "Ngày trả phòng phải sau ngày nhận phòng.", HttpStatus.BAD_REQUEST),
-    DURATION_NOT_30(2013,"Thời gian lưu trú không được vượt quá 30 ngày.", HttpStatus.BAD_REQUEST),;
+    DURATION_NOT_30(2013,"Thời gian lưu trú không được vượt quá 30 ngày.", HttpStatus.BAD_REQUEST),
+    IMAGE_HOTEL_NOT_FOUND(2014,"image hotel not found", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

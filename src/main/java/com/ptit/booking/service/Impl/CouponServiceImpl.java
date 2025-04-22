@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.ptit.booking.constants.ErrorMessage.INCORRECT_PASSWORD;
 
@@ -45,7 +46,7 @@ public class CouponServiceImpl implements CouponService {
     private final UserCouponRepository userCouponRepository;
 
     @Override
-    public ResponseEntity<?> getCouponByUser(Principal principal, String couponCode, float totalPrice) {
+    public ResponseEntity<?> getCouponByUser(Principal principal, String couponCode, float totalPrice, Long couponCurrentId) {
         User user = (principal != null) ? (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal() : null;
         if(user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
@@ -54,10 +55,17 @@ public class CouponServiceImpl implements CouponService {
                     .timestamp(new Date(System.currentTimeMillis()))
                     .build());
         }
-        //List<Coupon> couponListByUser = couponRepository.findByUser(user);
         List<CouponDto> couponDtoListUse = couponMapper.toDtoList(
-                couponRepository.findBestCouponByUser(couponCode,user, BigDecimal.valueOf(totalPrice))
+                couponRepository.findBestCouponByUser(couponCode, user, BigDecimal.valueOf(totalPrice))
         );
+
+        // Gán toUse = true nếu id trùng, còn lại là false
+        for (CouponDto dto : couponDtoListUse) {
+            dto.setToUse(dto.getId() == couponCurrentId);
+        }
+
+        // Sắp xếp coupon có toUse = true lên đầu
+        couponDtoListUse.sort(Comparator.comparing(CouponDto::isToUse).reversed());
         return ResponseEntity.ok(ApiResponse.builder()
                 .statusCode(HttpStatus.OK.value())
                 .message(SuccessMessage.LIST_COUPON_CAN_USE)

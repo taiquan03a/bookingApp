@@ -88,7 +88,7 @@ public class HotelServiceImpl implements HotelService {
                         .imageUrl(hotel.getImages()
                                 .stream()
                                 .findFirst()
-                                .orElseThrow(() -> new AppException(ErrorCode.ROOM_NOT_FOUND))
+                                .orElseThrow(() -> new AppException(ErrorCode.IMAGE_HOTEL_NOT_FOUND))
                                 .getUrl())
                         .build();
                 hotelRequestList.add(hotelRequest);

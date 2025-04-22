@@ -17,8 +17,9 @@ public class CouponController {
     @GetMapping("get_by_user")
     public ResponseEntity<?> addCoupon(@RequestParam(required = false,defaultValue = "") String code,
                                        @RequestParam float totalPrice,
+                                       @RequestParam Long currentCouponId,
                                        Principal principal) {
-        return couponService.getCouponByUser(principal,code,totalPrice);
+        return couponService.getCouponByUser(principal,code,totalPrice,currentCouponId);
     }
 
     @GetMapping("rank")

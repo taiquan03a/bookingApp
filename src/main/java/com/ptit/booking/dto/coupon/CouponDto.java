@@ -18,4 +18,5 @@ public class CouponDto {
     private LocalDateTime validFromDate;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
     private LocalDateTime expirationDate;
+    boolean toUse;
 }
