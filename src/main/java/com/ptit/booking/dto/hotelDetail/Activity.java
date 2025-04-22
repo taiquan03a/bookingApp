@@ -12,7 +12,9 @@ import lombok.NoArgsConstructor;
 public class Activity {
     private String name;
     private String description;
-    private float rating;
     private String distance;
-    private String image;
+    private float rating;
+    private String photoUrl;
+    private String latitude;
+    private String longitude;
 }

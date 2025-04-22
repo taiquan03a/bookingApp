@@ -44,5 +44,3 @@ public class NotificationController {
         return notificationService.readNotification(notiId);
     }
 }
-
-//record NotificationRequest(Long userId, String title, String message, EnumNotificationType type) {}

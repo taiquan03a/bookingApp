@@ -469,14 +469,25 @@ public class HotelServiceImpl implements HotelService {
             Activity activity = new Activity();
             String fsqId = place.get("fsq_id").toString();
 
-            // Basic info
             activity.setName((String) place.getOrDefault("name", "No name"));
-            activity.setDescription((String) place.getOrDefault("description", "No description"));
+            activity.setDescription((String) place.getOrDefault("description", "Không có mô tả nào."));
             activity.setDistance(place.containsKey("distance")
                     ? place.get("distance") + " m"
                     : "Unknown");
 
-            // 5. Get rating
+            //Get coordinates
+            Map<String, Object> geocodes = (Map<String, Object>) place.get("geocodes");
+            if (geocodes != null && geocodes.containsKey("main")) {
+                Map<String, Object> mainCoords = (Map<String, Object>) geocodes.get("main");
+                activity.setLatitude((String) mainCoords.get("latitude").toString());
+                activity.setLongitude((String) mainCoords.get("longitude").toString());
+            }
+
+            //Get photo
+            String photoUrl = getFirstPhotoUrl(fsqId, entity);
+            activity.setPhotoUrl(photoUrl);
+
+            //Get rating
             float rating = getPlaceRating(fsqId, entity);
             activity.setRating(rating);
 
@@ -484,6 +495,19 @@ public class HotelServiceImpl implements HotelService {
         }
 
         return activities;
+    }
+    private String getFirstPhotoUrl(String fsqId, HttpEntity<String> entity) {
+        String url = "https://api.foursquare.com/v3/places/" + fsqId + "/photos";
+        ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.GET, entity, List.class);
+
+        if (response.getBody() != null && !response.getBody().isEmpty()) {
+            Map<String, Object> photo = (Map<String, Object>) response.getBody().get(0);
+            String prefix = photo.get("prefix").toString();
+            String suffix = photo.get("suffix").toString();
+            return prefix + "original" + suffix;
+        }
+
+        return null; // hoặc URL ảnh mặc định
     }
     private float getPlaceRating(String fsqId, HttpEntity<String> entity) {
         String detailsUrl = "https://api.foursquare.com/v3/places/" + fsqId;
