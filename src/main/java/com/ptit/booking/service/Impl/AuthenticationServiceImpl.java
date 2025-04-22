@@ -3,10 +3,7 @@ package com.ptit.booking.service.Impl;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.api.exceptions.ApiException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.firebase.auth.AuthErrorCode;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
+import com.google.firebase.auth.*;
 import com.ptit.booking.constants.ErrorMessage;
 import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
@@ -60,7 +57,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 
     @Override
-    public ResponseEntity<?> register(RegisterRequest request) {
+    public ResponseEntity<?> register(RegisterRequest request) throws FirebaseAuthException {
 
         var existedUser = userRepository.findByEmail(request.getEmail());
         if (existedUser.isPresent())
@@ -71,13 +68,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     .timestamp(new Date(System.currentTimeMillis()))
                     .build());
 
+        UserRecord.CreateRequest createRequest = new UserRecord.CreateRequest()
+                .setEmail(request.getEmail())
+                .setPassword(request.getPassword());
+        UserRecord userRecord = FirebaseAuth.getInstance().createUser(createRequest);
         var role = new HashSet<Role>();
         role.add(roleRepository.findRoleByRole(EnumRole.ROLE_USER.name()));
         var user = new User();
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
-
+        user.setUid(userRecord.getUid());
         user.setPhone(request.getPhoneNumber());
         user.setRoles(role);
         user.setActive(true);

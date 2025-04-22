@@ -1,6 +1,7 @@
 package com.ptit.booking.service;
 
 
+import com.google.firebase.auth.FirebaseAuthException;
 import com.ptit.booking.dto.auth.AuthenticationRequest;
 import com.ptit.booking.dto.auth.FirebaseTokenId;
 import com.ptit.booking.dto.auth.RegisterRequest;
@@ -18,7 +19,7 @@ import java.security.Principal;
 public interface AuthenticationService {
     ResponseEntity<?> updateProfile(UpdateProfileRequest updateProfileRequest,Principal principal);
     ResponseEntity<?> authenticate(AuthenticationRequest request, HttpServletRequest httpServletRequest, HttpServletResponse response, Authentication authentication) throws java.io.IOException;
-    ResponseEntity<?> register(RegisterRequest request);
+    ResponseEntity<?> register(RegisterRequest request) throws FirebaseAuthException;
     ResponseEntity<?> updatePassword(UpdatePasswordRequest updatePasswordRequest, Principal connectedUser);
     void revokeAllUserTokens(User user);
     void refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException, java.io.IOException;

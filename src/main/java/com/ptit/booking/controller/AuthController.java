@@ -51,7 +51,7 @@ public class AuthController {
         return ResponseEntity.ok("You are authenticated");
     }
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, BindingResult bindingResult){
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, BindingResult bindingResult) throws FirebaseAuthException {
         if (bindingResult.hasErrors()){
             return ResponseEntity.status(HttpStatusCode.valueOf(403)).body(new InputFieldException(bindingResult).getMessage());
         }
