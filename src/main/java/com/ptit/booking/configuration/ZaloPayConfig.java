@@ -8,7 +8,7 @@ public class ZaloPayConfig {
     public static String KEY2 = "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz";
     public static String CREATE_ORDER_URL = "https://sb-openapi.zalopay.vn/v2/create";
     public static String GET_STATUS_PAY_URL = "https://sb-openapi.zalopay.vn/v2/query";
-    public static String REDIRECT_URL = "https://21a7-2405-4802-1d25-f5d0-5c24-88cb-35a4-90c8.ngrok-free.app/api/payment/callback";
+    public static String REDIRECT_URL = "https://3fd0-27-79-159-68.ngrok-free.app/api/payment/callback";
     public static String REFUND_URL = "https://sb-openapi.zalopay.vn/v2/refund";
     public static String GET_STATUS_REFUND_URL = "https://sb-openapi.zalopay.vn/v2/query_refund";
 }

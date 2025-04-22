@@ -33,6 +33,7 @@ public class UserServiceImpl implements UserService {
                     .build());
         }
         Information information = Information.builder()
+                .avatar(user.getAvatar())
                 .lastName(user.getLastName())
                 .firstName(user.getFirstName())
                 .email(user.getEmail())
