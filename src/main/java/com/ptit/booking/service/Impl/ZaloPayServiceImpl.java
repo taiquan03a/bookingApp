@@ -284,7 +284,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
         }
         return RefundResponse.builder()
                 .mRefundId(payload.get("m_refund_id").toString())
-                .refundId(result.get("refund_id").toString())
+                .refundId(null)
                 .subReturnCode((int) result.get("sub_return_code"))
                 .returnMessage(result.get("return_message").toString())
                 .returnCode((int) result.get("return_code"))

@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -199,7 +200,11 @@ public class HotelServiceImpl implements HotelService {
                     : null;
 
             Promotion promotion = hotel.getPromotions() != null
-                    ? hotel.getPromotions().stream().findFirst().orElse(null)
+                    ? hotel.getPromotions().stream()
+                    .filter(Promotion::getStatus)
+                    .filter(promotionMap -> LocalDateTime.now().isAfter(promotionMap.getStartDate()))
+                    .filter(promotionMap -> LocalDateTime.now().isBefore(promotionMap.getEndDate()))
+                    .findFirst().orElse(null)
                     : null;
 
             float price = hotel.getRooms() != null

@@ -121,7 +121,7 @@ public class BookingServiceImpl implements BookingService {
             totalAdults += roomBooked.getAdults();
             roomBookedList.add(roomBooked);
         }
-        long selectDay = ChronoUnit.DAYS.between(bookingRoomRequest.getCheckInDate(), bookingRoomRequest.getCheckOutDate());
+        //long selectDay = ChronoUnit.DAYS.between(bookingRoomRequest.getCheckInDate(), bookingRoomRequest.getCheckOutDate());
         BigDecimal totalPrice = totalPriceRoom.add(totalPriceService);
         BigDecimal priceCoupon = BigDecimal.ZERO;
         Coupon coupon = new Coupon();
@@ -326,9 +326,9 @@ public class BookingServiceImpl implements BookingService {
             booking.setStatus(EnumBookingStatus.CANCELED.name());
             paymentRepository.save(paymentDeposit);
             bookingRepository.save(booking);
-            String title = NotificationConstants.Template.Booking.TITLE_SUCCESS;
+            String title = NotificationConstants.Template.Cancel.TITLE_SUCCESS;
             String message = String.format(
-                    NotificationConstants.Template.Booking.MESSAGE_SUCCESS,
+                    NotificationConstants.Template.Cancel.MESSAGE_SUCCESS,
                     booking.getHotel().getName(), booking.getCheckIn(), booking.getCheckOut()
             );
             notificationService.sendNotification(

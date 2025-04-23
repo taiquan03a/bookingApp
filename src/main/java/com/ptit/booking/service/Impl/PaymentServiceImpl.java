@@ -52,6 +52,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final BookingRoomRepository bookingRoomRepository;
     private final ServiceRepository serviceRepository;
     private final CouponRepository couponRepository;
+    private final UserCouponRepository userCouponRepository;
 
     @Override
     @Transactional()
@@ -183,9 +184,15 @@ public class PaymentServiceImpl implements PaymentService {
                 .amount(paymentPrice.longValue())
                 .paymentType(EnumPaymentType.DEPOSIT.name())
                 .build();
-        Coupon coupon = couponRepository.findById(bookingRoomRequest.getCouponId())
-                .orElseThrow(()-> new AppException(ErrorCode.COUPON_NOT_FOUND));
-        //UserCoupon userCoupon = coupon.getUserCoupons();
+        if(bookingRoomRequest.getCouponId() != 0){
+            Coupon coupon = couponRepository.findById(bookingRoomRequest.getCouponId())
+                    .orElseThrow(()-> new AppException(ErrorCode.COUPON_NOT_FOUND));
+            UserCoupon userCoupon = userCouponRepository.findByUserAndCoupon(user,coupon);
+            if(userCoupon != null){
+                userCoupon.setUse(true);
+            }
+        }
+
 
         return zaloPayService.createOrder(createOrderRequest);
     }
