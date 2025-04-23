@@ -13,6 +13,7 @@ public class ReviewDto {
     private int sumReview;
     private String description;
     private Set<Amenity> amenities;
+    private String ll;
     private String location;
     private String phoneNumber;
     private Feedback feedback;
