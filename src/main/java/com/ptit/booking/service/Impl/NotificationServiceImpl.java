@@ -94,21 +94,6 @@ public class NotificationServiceImpl implements NotificationService {
     private void sendPushNotification(UserDevice device, String title, String message,EnumNotificationType type,boolean isRead,LocalDateTime creatAt, Long notificationId) {
         try {
             HttpClient client = HttpClient.newHttpClient();
-            // ✅ JSON payload với thêm trường "data"
-//            String payload = String.format(
-//                    """
-//                    {
-//                        "to": "%s",
-//                        "title": "%s",
-//                        "body": "%s",
-//                        "data": {
-//                            "type": "%s",
-//                            "created_at": "%s"
-//                        }
-//                    }
-//                    """,
-//                    device.getDeviceToken(), escapeJson(title), escapeJson(message), type.toString(), creatAt.toString()
-//            );
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             String formattedCreatedAt = creatAt.format(formatter);
             ObjectMapper mapper = new ObjectMapper();

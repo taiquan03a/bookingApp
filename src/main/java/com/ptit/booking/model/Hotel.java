@@ -50,6 +50,15 @@ public class Hotel {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "lat")
+    private String lat;
+
+    @Column(name = "lng")
+    private String lng;
+
     @OneToMany(mappedBy = "hotel")
     @JsonIgnore
     private Set<Booking> bookings = new LinkedHashSet<>();

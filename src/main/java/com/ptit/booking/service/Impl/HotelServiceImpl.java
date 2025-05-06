@@ -238,7 +238,7 @@ public class HotelServiceImpl implements HotelService {
             return new HotelRequest(
                     hotel.getId(),
                     hotel.getName(),
-                    hotel.getLocation() != null ? hotel.getLocation().getName() : null,
+                    hotel.getAddress(),
                     hotel.getRating(),
                     imageUrl,
                     hotel.getFeedbackSum(),
@@ -333,27 +333,28 @@ public class HotelServiceImpl implements HotelService {
                 .ratingService((float) (Math.round(((float) ratingService/reviewList.size()) * 10.0) / 10.0))
                 .build();
 
-        String geocodeUrl = "https://nominatim.openstreetmap.org/search";
-        UriComponentsBuilder geoBuilder = UriComponentsBuilder.fromHttpUrl(geocodeUrl)
-                .queryParam("q", convertVietnamese(hotel.getLocation().getName()))
-                .queryParam("format", "json");
-
-        ResponseEntity<List> geoResponse = restTemplate.exchange(
-                geoBuilder.toUriString(), HttpMethod.GET, null, List.class);
-
-        if (geoResponse.getBody() == null || geoResponse.getBody().isEmpty()) {
-            throw new RuntimeException("Location not found");
-        }
-
-        Map<String, Object> geoData = (Map<String, Object>) geoResponse.getBody().get(0);
-        String ll = geoData.get("lat") + "," + geoData.get("lon");
+//        String geocodeUrl = "https://nominatim.openstreetmap.org/search";
+//        UriComponentsBuilder geoBuilder = UriComponentsBuilder.fromHttpUrl(geocodeUrl)
+//                .queryParam("q", convertVietnamese(hotel.getLocation().getName()))
+//                .queryParam("format", "json");
+//
+//        ResponseEntity<List> geoResponse = restTemplate.exchange(
+//                geoBuilder.toUriString(), HttpMethod.GET, null, List.class);
+//
+//        if (geoResponse.getBody() == null || geoResponse.getBody().isEmpty()) {
+//            throw new RuntimeException("Location not found");
+//        }
+//
+//        Map<String, Object> geoData = (Map<String, Object>) geoResponse.getBody().get(0);
+//        String ll = geoData.get("lat") + "," + geoData.get("lon");
         ReviewDto review = ReviewDto.builder()
-                .ll(ll)
+                .lat(hotel.getLat())
+                .lng(hotel.getLng())
                 .description(hotel.getDescription())
                 .amenities(hotel.getAmenities())
                 .rating(hotel.getRating())
                 .phoneNumber("123456789")
-                .location(hotel.getLocation().getName())
+                .location(hotel.getAddress())
                 .sumReview(hotel.getFeedbackSum())
                 .feedback(feedback)
                 .build();
