@@ -414,8 +414,8 @@ public class HotelServiceImpl implements HotelService {
                     .timestamp(new Date(System.currentTimeMillis()))
                     .build());
         }
-        //So luong anh co qua 5 hay khong
-        if(request.getImage().size() > 5){
+        // Kiểm tra nếu gửi ảnh thì không vượt quá 5
+        if (request.getImage() != null && request.getImage().size() > 5) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.builder()
                     .statusCode(405)
                     .message(MAXIMUM_5_IMAGE)
@@ -433,16 +433,15 @@ public class HotelServiceImpl implements HotelService {
                 .comment(request.getComment())
                 .build();
         reviewRepository.save(review);
-        List<String> urlImageList = new ArrayList<>();
-        if(request.getImage() != null){
-            urlImageList =  cloudinaryService.uploadImages(request.getImage(), "review");
-            List<Image> images = urlImageList.stream().map(url -> {
-                return Image.builder()
-                        .url(url)
-                        .type("REVIEW")
-                        .reviewId(review.getId())
-                        .build();
-            }).toList();
+        //List<String> urlImageList = new ArrayList<>();
+        // Nếu có ảnh thì upload
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            List<String> urlImageList = cloudinaryService.uploadImages(request.getImage(), "review");
+            List<Image> images = urlImageList.stream().map(url -> Image.builder()
+                    .url(url)
+                    .type("REVIEW")
+                    .reviewId(review.getId())
+                    .build()).toList();
             imageRepository.saveAll(images);
         }
 
