@@ -422,10 +422,6 @@ public class HotelServiceImpl implements HotelService {
                     .timestamp(new Date(System.currentTimeMillis()))
                     .build());
         }
-        List<String> urlImageList = new ArrayList<>();
-        if(request.getImage() != null){
-            urlImageList =  cloudinaryService.uploadImages(request.getImage(), "review");
-        }
 
         Review review = Review.builder()
                 .user(user)
@@ -437,14 +433,19 @@ public class HotelServiceImpl implements HotelService {
                 .comment(request.getComment())
                 .build();
         reviewRepository.save(review);
-        List<Image> images = urlImageList.stream().map(url -> {
-            return Image.builder()
-                    .url(url)
-                    .type("REVIEW")
-                    .reviewId(review.getId())
-                    .build();
-        }).toList();
-        imageRepository.saveAll(images);
+        List<String> urlImageList = new ArrayList<>();
+        if(request.getImage() != null){
+            urlImageList =  cloudinaryService.uploadImages(request.getImage(), "review");
+            List<Image> images = urlImageList.stream().map(url -> {
+                return Image.builder()
+                        .url(url)
+                        .type("REVIEW")
+                        .reviewId(review.getId())
+                        .build();
+            }).toList();
+            imageRepository.saveAll(images);
+        }
+
         return ResponseEntity.ok(ApiResponse.builder()
                 .statusCode(HttpStatus.OK.value())
                 .message(SuccessMessage.SEND_REVIEW_SUCCESSFULLY)
