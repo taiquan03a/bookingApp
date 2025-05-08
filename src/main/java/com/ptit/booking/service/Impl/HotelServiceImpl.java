@@ -422,7 +422,11 @@ public class HotelServiceImpl implements HotelService {
                     .timestamp(new Date(System.currentTimeMillis()))
                     .build());
         }
-        List<String> urlImageList = cloudinaryService.uploadImages(request.getImage(), "review");
+        List<String> urlImageList = new ArrayList<>();
+        if(request.getImage() != null){
+            urlImageList =  cloudinaryService.uploadImages(request.getImage(), "review");
+        }
+
         Review review = Review.builder()
                 .user(user)
                 .hotel(hotel)
