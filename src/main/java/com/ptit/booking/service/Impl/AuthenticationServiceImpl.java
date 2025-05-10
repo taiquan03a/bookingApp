@@ -140,7 +140,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setEmail(request.getEmail());
+        //user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
 
         if(request.getImage() != null){

@@ -61,6 +61,7 @@ public class HotelServiceImpl implements HotelService {
     private final BookingRepository bookingRepository;
     private final CloudinaryService cloudinaryService;
     private final ImageRepository imageRepository;
+    private final OtaRepository otaRepository;
     private String apiKey = "fsq3VsauLSw5an6aSmbScZFmlw1nco2b+9ozuSaKfVJzdK4=";
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -234,6 +235,14 @@ public class HotelServiceImpl implements HotelService {
                     }
                 }
             }
+            List<OtaPriceMin> otaPriceMinList = otaRepository.findOtaByHotelId(hotel.getId()).stream()
+                    .map(ota -> {
+                        return OtaPriceMin.builder()
+                                .otaName(ota.getName())
+                                .minPrice(otaRepository.findOtaHotel(ota.getId(),hotel.getId()).getPriceMin().toString())
+                                .build();
+                    })
+                    .toList();
 
             return new HotelRequest(
                     hotel.getId(),
@@ -245,6 +254,7 @@ public class HotelServiceImpl implements HotelService {
                     promotionValueStr,
                     String.format("%.0f", promotionPrice), // nếu bạn muốn format thành chuỗi không có số thập phân
                     promotionName,
+                    otaPriceMinList,
                     price
             );
         });
@@ -363,15 +373,49 @@ public class HotelServiceImpl implements HotelService {
                 .ratingLocation(String.valueOf(hotel.getLocation().getRating()))
                 .activityList(searchPlaces(convertVietnamese(hotel.getLocation().getName())))
                 .build();
+
+        Promotion promotion = hotel.getPromotions() != null
+                ? hotel.getPromotions().stream()
+                .filter(Promotion::getStatus)
+                .filter(promotionMap -> LocalDateTime.now().isAfter(promotionMap.getStartDate()))
+                .filter(promotionMap -> LocalDateTime.now().isBefore(promotionMap.getEndDate()))
+                .findFirst().orElse(null)
+                : null;
+
+        float price = hotel.getRooms() != null
+                ? hotel.getRooms().stream().map(Room::getPrice).min(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO).floatValue()
+                : 0.0f;
+
+        float promotionPrice = price;
+
+        if (promotion != null) {
+            if ("PERCENTAGE".equalsIgnoreCase(promotion.getDiscountType())) {
+                try {
+                    float percent = Float.parseFloat(promotion.getDiscountValue().substring(0,promotion.getDiscountValue().length() - 1));
+                    promotionPrice = price - price * (percent / 100);
+                } catch (NumberFormatException e) {
+                    // bỏ qua nếu format sai
+                }
+            } else if ("FIXED".equalsIgnoreCase(promotion.getDiscountType())) {
+                try {
+                    float fixed = Float.parseFloat(promotion.getDiscountValue().toString());
+                    promotionPrice = price - fixed;
+                } catch (NumberFormatException e) {
+                    // bỏ qua nếu format sai
+                }
+            }
+        }
         HotelDetail hotelDetail = HotelDetail.builder()
                 .images(hotel.getImages().stream().map(Image::getUrl).toList())
                 .nearBy(nearBy)
-                .priceMin(daysBetween * hotel.getRooms()
+                .priceNoPromotion(daysBetween * hotel.getRooms()
                         .stream()
                         .map(Room::getPrice)
                         .min(BigDecimal::compareTo)
                         .orElse(BigDecimal.ZERO)
                         .floatValue())
+                .priceMin(promotionPrice)
                 .review(review)
                 .build();
         return ResponseEntity.ok(ApiResponse.builder()

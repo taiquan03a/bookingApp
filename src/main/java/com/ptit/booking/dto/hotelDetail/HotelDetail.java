@@ -16,4 +16,5 @@ public class HotelDetail {
     private List<String> images;
     private NearBy nearBy;
     private float priceMin;
+    private float priceNoPromotion;
 }

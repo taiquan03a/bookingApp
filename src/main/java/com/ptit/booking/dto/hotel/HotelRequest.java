@@ -20,6 +20,6 @@ public class HotelRequest {
     private String promotionValue;
     private String promotionPrice;
     private String promotionName;
-    //private List<Integer> roomIdList;
+    private List<OtaPriceMin> otaPriceMinList;
     private float price;
 }
