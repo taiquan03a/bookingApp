@@ -9,6 +9,7 @@ import com.ptit.booking.dto.zaloPay.RefundOrderRequest;
 import com.ptit.booking.dto.zaloPay.RefundResponse;
 import com.ptit.booking.enums.EnumBookingStatus;
 import com.ptit.booking.enums.EnumNotificationType;
+import com.ptit.booking.enums.EnumPaymentStatus;
 import com.ptit.booking.enums.EnumPaymentType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
@@ -124,7 +125,7 @@ public class PaymentController {
                 Payment payment = paymentRepository.findByAppTransId(data.getString("app_trans_id"));
                 String zpTransId = data.optString("zp_trans_id");
                 payment.setZpTransId(zpTransId);
-                payment.setPaymentStatus(EnumBookingStatus.BOOKED.name());
+                payment.setPaymentStatus(EnumPaymentStatus.SUCCESS.name());
                 paymentRepository.save(payment);
                 //Booking booking = payment.getBooking();
                 booking.setStatus(EnumBookingStatus.BOOKED.name());

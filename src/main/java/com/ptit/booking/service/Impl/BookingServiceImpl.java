@@ -125,6 +125,7 @@ public class BookingServiceImpl implements BookingService {
         BigDecimal totalPrice = totalPriceRoom.add(totalPriceService);
         BigDecimal priceCoupon = BigDecimal.ZERO;
         Coupon coupon = new Coupon();
+        System.out.println("couponId: " + bookingRoomRequest.getCouponId());
         if(bookingRoomRequest.getCouponId() == 0){
             List<Coupon> couponList = couponRepository
                     .findBestCouponByUser(
@@ -134,6 +135,7 @@ public class BookingServiceImpl implements BookingService {
                     );
             if(!couponList.isEmpty()){
                 coupon = couponList.get(0);
+                System.out.println("coupon: " + coupon.getCode());
                 priceCoupon = couponRepository.calculateDiscountAmount(
                         coupon,totalPrice);
             }
@@ -192,7 +194,7 @@ public class BookingServiceImpl implements BookingService {
         }
         List<HistoryBooking> historyBookingList = new ArrayList<>();
         for (EnumBookingStatus status : EnumBookingStatus.values()) {
-            if(!status.equals(EnumBookingStatus.PENDING)){
+            if(!status.equals(EnumBookingStatus.PENDING) && !status.equals(EnumBookingStatus.FAILED)){
                 List<Booking> bookedList = bookingRepository.findAllByUserAndStatus(user,status.name());
                 List<HotelHistoryResponse> hotelBookedList = bookedList.stream().map(booking -> {
                     Hotel hotel = booking.getHotel();
@@ -241,7 +243,7 @@ public class BookingServiceImpl implements BookingService {
                     .build());
         }
         Hotel hotel = booking.getHotel();
-        Policy policyCancel = hotelRepository.findPoliciesByHotelAndType(hotel, EnumPolicyType.CANCEL.name());
+
 
         LocalDateTime checkInTime = booking.getCheckIn();
         LocalDateTime currentTime = LocalDateTime.now();
@@ -256,7 +258,6 @@ public class BookingServiceImpl implements BookingService {
             );
         }
 
-        BigDecimal refundPrice = BigDecimal.ZERO;
 
         Payment paymentDeposit = paymentRepository.findByBooking(booking)
                 .stream()
@@ -265,36 +266,24 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_DEPOSIT_NOT_FOUND));
 
 
+        BigDecimal refundPrice = calculateRefundPrice(booking,paymentDeposit,hoursBetween);
 
-        //hoursBetween sau 12h thi theo value , truoc 12h thi 100%
-        if(policyCancel.getOperator().equals(EnumPolicyOperator.after.name())){
-            // sau 12h
-            if(hoursBetween < Long.parseLong(policyCancel.getCondition())){
-                String numericPart = policyCancel.getValue().replace("%", "").trim();
-                BigDecimal refundPercent = new BigDecimal(numericPart).divide(BigDecimal.valueOf(100));
-                refundPrice = paymentDeposit.getAmount().multiply(refundPercent);
-            }else{
-                // >= 12h
-                refundPrice = paymentDeposit.getAmount();
-            }
-        }
-        //hoursBetween truoc 12h thi theo value , sau 12h thi 0%
-        else if(policyCancel.getOperator().equals(EnumPolicyOperator.before.name())){
-                // >12h
-                if(hoursBetween > Long.parseLong(policyCancel.getCondition())){
-                    String numericPart = policyCancel.getValue().replace("%", "").trim();
-                    BigDecimal refundPercent = new BigDecimal(numericPart).divide(BigDecimal.valueOf(100));
-                    refundPrice = paymentDeposit.getAmount().multiply(refundPercent);
-                }
-        }
-
-        log.info("refund price: " + refundPrice);
-
+        Payment paymentCancel = Payment.builder()
+                .amount(refundPrice)
+                .paymentMethod("ZALOPAY")
+                .paymentType(EnumPaymentType.REFUND.name())
+                .booking(booking)
+                .createdAt(LocalDateTime.now())
+                .message(cancelBookingRequest.getReason())
+                .paymentStatus(EnumBookingStatus.PENDING.name())
+                .zpTransId(paymentDeposit.getZpTransId())
+                .build();
         if(refundPrice.compareTo(BigDecimal.ZERO) == 0){
-            paymentDeposit.setPaymentStatus(EnumBookingStatus.CANCELED.name());
-            paymentDeposit.setMessage(cancelBookingRequest.getReason());
+            //paymentDeposit.setPaymentStatus(EnumBookingStatus.CANCELED.name());
+            //paymentDeposit.setMessage(cancelBookingRequest.getReason());
             booking.setStatus(EnumBookingStatus.CANCELED.name());
-            paymentRepository.save(paymentDeposit);
+            paymentCancel.setPaymentStatus(EnumPaymentStatus.SUCCESS.name());
+            paymentRepository.save(paymentCancel);
             bookingRepository.save(booking);
             String title = NotificationConstants.Template.Cancel.TITLE_SUCCESS;
             String message = String.format(
@@ -321,10 +310,11 @@ public class BookingServiceImpl implements BookingService {
         refundOrderRequest.setDescription(cancelBookingRequest.getReason());
         RefundResponse refundResponse = zaloPayService.refundOrder(refundOrderRequest);
         if(refundResponse.getReturnCode() == 1){
-            paymentDeposit.setPaymentStatus(EnumBookingStatus.CANCELED.name());
-            paymentDeposit.setMessage(cancelBookingRequest.getReason());
+//            paymentDeposit.setPaymentStatus(EnumBookingStatus.CANCELED.name());
+//            paymentDeposit.setMessage(cancelBookingRequest.getReason());
+            paymentCancel.setPaymentStatus(EnumPaymentStatus.SUCCESS.name());
             booking.setStatus(EnumBookingStatus.CANCELED.name());
-            paymentRepository.save(paymentDeposit);
+            paymentRepository.save(paymentCancel);
             bookingRepository.save(booking);
             String title = NotificationConstants.Template.Cancel.TITLE_SUCCESS;
             String message = String.format(
@@ -343,6 +333,8 @@ public class BookingServiceImpl implements BookingService {
                     .data(refundResponse)
                     .build());
         }
+        paymentCancel.setPaymentStatus(EnumPaymentStatus.FAILED.name());
+        paymentRepository.save(paymentCancel);
         String title = NotificationConstants.Template.Cancel.TITLE_FAIL;
         String message = String.format(
                 NotificationConstants.Template.Cancel.MESSAGE_FAIL,
@@ -394,10 +386,35 @@ public class BookingServiceImpl implements BookingService {
                             .build();
                 }).toList();
         Set<Payment> payment = booking.getPayments();
+
+        /*
+            Note: Tinh tien hoan neu nguoi dung co nhu cau huy
+         */
+        LocalDateTime checkInTime = booking.getCheckIn();
+        LocalDateTime currentTime = LocalDateTime.now();
+        long hoursBetween = Duration.between(currentTime, checkInTime).toHours();
+        Payment paymentDeposit = paymentRepository.findByBooking(booking)
+                .stream()
+                .filter(pay -> pay.getPaymentType().equals(EnumPaymentType.DEPOSIT.name()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_DEPOSIT_NOT_FOUND));
+
+
+        BigDecimal refundPrice = calculateRefundPrice(booking,paymentDeposit,hoursBetween);
+
         HistoryBookingDetailResponse historyDetail = HistoryBookingDetailResponse.builder()
                 .hotelId(booking.getHotel().getId())
                 .bookingStatus(booking.getStatus())
                 .bookingStatusTime(booking.getUpdateAt())
+                .cancelTime(
+                        payment.stream()
+                                .filter(
+                                        pay -> pay.getPaymentType().equals(EnumPaymentType.REFUND.name())
+                                )
+                                .findFirst()
+                                .map(Payment::getCreatedAt)
+                                .orElse(null)
+                )
                 .bookingId(bookingId)
                 .hotelName(booking.getHotel().getName())
                 .hotelAddress(booking.getHotel().getLocation().getName())
@@ -414,12 +431,22 @@ public class BookingServiceImpl implements BookingService {
                 .reason(
                         payment.stream()
                                 .filter(
-                                        pay -> pay.getPaymentType().equals(EnumPaymentType.DEPOSIT.name())
+                                        pay -> pay.getPaymentType().equals(EnumPaymentType.REFUND.name())
                                 )
                                 .findFirst()
-                                .orElseThrow(()-> new AppException(ErrorCode.PAYMENT_DEPOSIT_NOT_FOUND))
-                                .getMessage()
+                                .map(Payment::getMessage)
+                                .orElse(null)
 
+                )
+                .priceIfRefund(refundPrice.setScale(2, RoundingMode.HALF_UP).toString())
+                .paymentRefund(
+                        payment.stream()
+                                .filter(
+                                        pay -> pay.getPaymentType().equals(EnumPaymentType.REFUND.name())
+                                )
+                                .findFirst()
+                                .map(pay -> pay.getAmount().toString())
+                                .orElse(null)
                 )
                 .paymentDeposit(
                         payment.stream()
@@ -448,5 +475,36 @@ public class BookingServiceImpl implements BookingService {
                 .message(SuccessMessage.HISTORY_BOOKING_DETAIL_SUCCESSFULLY)
                 .data(historyDetail)
                 .build());
+    }
+
+    private BigDecimal calculateRefundPrice(Booking booking,Payment paymentDeposit,long hoursBetween){
+        Policy policyCancel = hotelRepository.findPoliciesByHotelAndType(booking.getHotel(), EnumPolicyType.CANCEL.name());
+
+        BigDecimal refundPrice = BigDecimal.ZERO;
+
+        //hoursBetween sau 12h thi theo value , truoc 12h thi 100%
+        if(policyCancel.getOperator().equals(EnumPolicyOperator.after.name())){
+            // sau 12h
+            if(hoursBetween < Long.parseLong(policyCancel.getCondition())){
+                String numericPart = policyCancel.getValue().replace("%", "").trim();
+                BigDecimal refundPercent = new BigDecimal(numericPart).divide(BigDecimal.valueOf(100));
+                refundPrice = paymentDeposit.getAmount().multiply(refundPercent);
+            }else{
+                // >= 12h
+                refundPrice = paymentDeposit.getAmount();
+            }
+        }
+        //hoursBetween truoc 12h thi theo value , sau 12h thi 0%
+        else if(policyCancel.getOperator().equals(EnumPolicyOperator.before.name())){
+            // >12h
+            if(hoursBetween > Long.parseLong(policyCancel.getCondition())){
+                String numericPart = policyCancel.getValue().replace("%", "").trim();
+                BigDecimal refundPercent = new BigDecimal(numericPart).divide(BigDecimal.valueOf(100));
+                refundPrice = paymentDeposit.getAmount().multiply(refundPercent);
+            }
+        }
+
+        log.info("refund price: " + refundPrice);
+        return refundPrice;
     }
 }

@@ -5,6 +5,7 @@ import com.ptit.booking.constants.SuccessMessage;
 import com.ptit.booking.dto.ApiResponse;
 import com.ptit.booking.dto.zaloPay.*;
 import com.ptit.booking.enums.EnumBookingStatus;
+import com.ptit.booking.enums.EnumPaymentStatus;
 import com.ptit.booking.enums.EnumPaymentType;
 import com.ptit.booking.exception.AppException;
 import com.ptit.booking.exception.ErrorCode;
@@ -59,7 +60,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             transaction.setBooking(bookingRepository.findById(request.getOrderId())
                     .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND)));
             transaction.setAmount(BigDecimal.valueOf(request.getAmount()));
-            transaction.setPaymentStatus("PENDING");
+            transaction.setPaymentStatus(EnumBookingStatus.PENDING.name());
             transaction.setPaymentMethod("ZALOPAY");
             transaction.setPaymentType(request.getPaymentType());
             transaction.setCreatedAt(LocalDateTime.now());
@@ -79,7 +80,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
 
             if (returnCode != 1) {
                 log.warn("ZaloPay order creation failed. ReturnCode: {}, ReturnMessage: {}", returnCode, returnMessage);
-                transaction.setPaymentStatus("FAILED");
+                transaction.setPaymentStatus(EnumPaymentStatus.FAILED.name());
                 transaction.setMessage(returnMessage);
                 paymentRepository.save(transaction);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -176,7 +177,7 @@ public class ZaloPayServiceImpl implements ZaloPayService {
             // Xử lý từng trạng thái
             switch (returnCode) {
                 case 1:
-                    payment.setPaymentStatus(EnumBookingStatus.BOOKED.name());
+                    payment.setPaymentStatus(EnumPaymentStatus.SUCCESS.name());
                     if(payment.getPaymentType().equals(EnumPaymentType.DEPOSIT.name())){
                         booking.setStatus(EnumBookingStatus.BOOKED.name());
                     }else{
@@ -192,8 +193,8 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                                     .build()
                     );
                 case 2:
-                    payment.setPaymentStatus("FAIL");
-                    booking.setStatus(EnumBookingStatus.CANCELED.name());
+                    payment.setPaymentStatus(EnumPaymentStatus.FAILED.name());
+                    booking.setStatus(EnumBookingStatus.FAILED.name());
                     bookingRepository.save(booking);
                     paymentRepository.save(payment);
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
@@ -204,7 +205,9 @@ public class ZaloPayServiceImpl implements ZaloPayService {
                                     .build()
                     );
                 case 3:
-                    //payment.setPaymentStatus(EnumBookingStatus.PENDING.name());
+                    payment.setPaymentStatus(EnumPaymentStatus.FAILED.name());
+                    booking.setStatus(EnumBookingStatus.FAILED.name());
+                    bookingRepository.save(booking);
                     paymentRepository.save(payment);
                     return ResponseEntity.status(HttpStatus.ACCEPTED).body(
                             ApiResponse.builder()

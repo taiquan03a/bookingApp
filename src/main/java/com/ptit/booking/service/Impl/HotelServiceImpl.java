@@ -254,7 +254,7 @@ public class HotelServiceImpl implements HotelService {
                     imageUrl,
                     hotel.getFeedbackSum(),
                     promotionValueStr,
-                    String.format("%.0f", promotionPrice), // nếu bạn muốn format thành chuỗi không có số thập phân
+                    String.format("%.0f", promotionPrice),
                     promotionName,
                     otaPriceMinList,
                     price
@@ -491,6 +491,10 @@ public class HotelServiceImpl implements HotelService {
             imageRepository.saveAll(images);
         }
 
+        float newRating = (hotel.getFeedbackSum() * hotel.getRating() + request.getHotelPoint()) / (hotel.getFeedbackSum() + 1);
+        hotel.setRating(newRating);
+        hotel.setFeedbackSum(hotel.getFeedbackSum() + 1);
+        hotelRepository.save(hotel);
         return ResponseEntity.ok(ApiResponse.builder()
                 .statusCode(HttpStatus.OK.value())
                 .message(SuccessMessage.SEND_REVIEW_SUCCESSFULLY)
