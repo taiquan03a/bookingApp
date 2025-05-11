@@ -248,6 +248,8 @@ public class HotelServiceImpl implements HotelService {
                     hotel.getId(),
                     hotel.getName(),
                     hotel.getAddress(),
+                    hotel.getLat(),
+                    hotel.getLng(),
                     hotel.getRating(),
                     imageUrl,
                     hotel.getFeedbackSum(),

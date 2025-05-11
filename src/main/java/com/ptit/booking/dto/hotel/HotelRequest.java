@@ -14,6 +14,8 @@ public class HotelRequest {
     private Long hotelId;
     private String hotelName;
     private String hotelLocation;
+    private String lat;
+    private String lng;
     private float hotelRating;
     private String imageUrl;
     private int sumReview;
